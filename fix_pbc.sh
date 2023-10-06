@@ -47,7 +47,7 @@ SYSTEM=$3
 
 module load modules/2.2-20230808 vmd
 
-vmd -e rechain.tcl 
+vmd -dispdev text -e rechain.tcl 
 
 module unload modules/2.2-20230808 vmd
 

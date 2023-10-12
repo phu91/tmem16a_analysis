@@ -1,0 +1,8 @@
+Instructions for TMEM16A analysis: PORE PROFILE FIGURE
+
+1. get the radius profiles for each chain       : characterize_pore_radius.py
+2. Track PIP2 location                          : characterize_pip2_count.py
+3. Track chlorides locations and define pore    : characterize_chloride_define_pore.py
+##4. Calculate PORE PROFILE HISTOGRAM             : characterize_pore_RADIUS_HISTOGRAM.py
+##5. Concatenate chloride locations from both chains
+##6. Plot the PORE profile FIGURE                 : characterize_pore_profile_plot.py

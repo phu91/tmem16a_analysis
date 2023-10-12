@@ -30,11 +30,11 @@ def pca_calculation(selected_str,nComponent,skipping):
     return pc
 
 def extract_frames(startFrame,endFrame):
-    protein = u.select_atoms("protein and %s"%(selectionatom))
+    all = u.select_atoms("all")
     with mda.Writer("SEGMENT_FRAME_%s_TO_%s.pdb"%(startFrame,endFrame)) as pdb:
         pdb.write(protein)
 
-    with mda.Writer("SEGMENT_FRAME_%s_TO_%s.xtc"%(startFrame,endFrame), protein.n_atoms) as W:
+    with mda.Writer("SEGMENT_FRAME_%s_TO_%s.xtc"%(startFrame,endFrame), all.n_atoms) as W:
         for ts in u.trajectory[startFrame:endFrame:traj_skip]:
             W.write(protein)
 

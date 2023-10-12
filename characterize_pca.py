@@ -8,8 +8,9 @@ import seaborn as sns
 import argparse
 from MDAnalysis.coordinates.memory import MemoryReader
 from MDAnalysis.analysis import pca, align
-# import nglview as nv
+import nglview as nv
 from tqdm import tqdm
+from nglview.contrib.movie import MovieMaker
 
 import warnings
 # suppress some MDAnalysis warnings about writing PDB files
@@ -117,7 +118,26 @@ with open("PCA_%s.csv"%(systemname),"w+") as pca_out:
         pca_result = pca_calculation(chain,ncomponent,skipping=traj_skip)
         selected_segment = u.select_atoms(chain)
         transformed = pca_result.transform(selected_segment, n_components=ncomponent)
-        # transformed.shape
+        # Projecting PC1 to structure
+        pc1 = pca_result.p_components[:,0]
+        trans1 = transformed[:,0]
+        projected = np.outer(trans1, pc1) + pca_result.mean.flatten()
+        coordinates = projected.reshape(len(trans1), -1, 3)
+        proj1 = mda.Merge(selected_segment)
+        proj1.load_new(coordinates, order="fac")
+        proj1_selected = proj1.select_atoms("all")
+        proj1_selected.write('TEST_chain_%s.pdb'%(chain_list[ind]))
+        proj1_selected.write('TEST_chain_%s.dcd'%(chain_list[ind]),frames='all')
+        # print(proj1.trajectory)
+        # view = nv.show_mdanalysis(proj1.atoms)
+        # print(view)
+        # movie = MovieMaker(view,
+        #                     step=1,  # keep every 4th frame
+        #                     output='pc1.',
+        #                     render_params={"factor": 3},  # set to 4 for highest quality
+        #                     )
+        # proj1.write("c-alpha.dcd")
+
         df = pd.DataFrame(transformed,
                   columns=['PC{}'.format(i+1) for i in range(ncomponent)])
         if ind ==0: 

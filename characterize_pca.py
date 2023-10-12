@@ -79,13 +79,13 @@ u = mda.Universe(top_file,traj_file,in_memory=True)
 n_atom_origin = len(u.atoms)
 
 # Define REFERENCE: FRAME 0
-chainA = u.select_atoms("protein and segid PROA and resid 887 to 925",updating=True)
-chainB = u.select_atoms("protein and segid PROB and resid 887 to 925",updating=True)
+chainA = u.select_atoms("protein and segid PROA and backbone",updating=True)
+chainB = u.select_atoms("protein and segid PROB and backbone",updating=True)
 
-# chainA_full = u.select_atoms("protein and segid PROA and resid 887 to 925",updating=True)
-# chainB_full = u.select_atoms("protein and segid PROB and resid 887 to 925",updating=True)
+# chainA_full = u.select_atoms("protein and segid PROA and backbone",updating=True)
+# chainB_full = u.select_atoms("protein and segid PROB and backbone",updating=True)
 
-chain_str = ['protein and segid PROA and resid 887 to 925','protein and segid PROB and resid 887 to 925']
+chain_str = ['protein and segid PROA and backbone','protein and segid PROB and backbone']
 
 chain_list = ['PROA','PROB']
 
@@ -111,7 +111,7 @@ else:
 
 n_frames = len(u.trajectory)
 
-with open("PCA_TAIL_%s.csv"%(systemname),"w+") as pca_out:
+with open("PCA_%s.csv"%(systemname),"w+") as pca_out:
     pca_out.write("# Frame PC1 PC2 PC3 Chain ps\n")
     for ind, (chain) in enumerate((chain_str)):
         pca_result = pca_calculation(chain,ncomponent,skipping=traj_skip)

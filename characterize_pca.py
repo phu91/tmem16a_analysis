@@ -128,8 +128,8 @@ with open("PCA_DATA_%s.csv"%(systemname),"w+") as pca_out:
         proj1 = mda.Merge(selected_segment)
         proj1.load_new(coordinates, order="fac")
         proj1_selected = proj1.select_atoms("all")
-        proj1_selected.write('PCA_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
-        proj1_selected.write('PCA_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames='all')
+        proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
+        proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames='all')
 
         df = pd.DataFrame(transformed,
                   columns=['PC{}'.format(i+1) for i in range(ncomponent)])

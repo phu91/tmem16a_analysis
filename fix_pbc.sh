@@ -37,8 +37,7 @@ mol addfile $PSF
 
 set all [atomselect top all]
 
-$foo1 move [trans x -90]
-$foo1 move [trans y 180]
+$foo1 move [trans z 180]
 
 set chaina [atomselect top "segname PROA"]
 set chainb [atomselect top "segname PROB"]

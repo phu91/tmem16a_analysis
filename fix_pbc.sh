@@ -70,8 +70,11 @@ module load gromacs
 gmx editconf -f NEWCHAIN.pdb -center 0 0 0 -o CENTERED_${SYSTEM}.pdb
 echo 4 | gmx trjconv -f $PRODUCTION -s $TPR -pbc mol -n $INDEX -o tmp1.xtc
 echo 0 4 | gmx trjconv -f tmp1.xtc -s CENTERED_${SYSTEM}.pdb -fit rot+trans -n $INDEX -o tmp2.xtc
+echo 1 4 | gmx trjconv -f tmp1.xtc -s CENTERED_${SYSTEM}.pdb -fit rot+trans -n $INDEX -o tmp3.xtc
 
-mv tmp2.xtc PBC_${SYSTEM}.xtc
+mv tmp2.xtc PBC_CENTERED_PROT_${SYSTEM}.xtc
+mv tmp3.xtc PBC_CENTERED_MEMB_${SYSTEM}.xtc
+
 cp $PSF PBC_${SYSTEM}.psf
 rm tmp1.xtc
 rm rechain.tcl

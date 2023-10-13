@@ -3,32 +3,30 @@ import MDAnalysis as mda
 import pandas as pd
 import numpy as np
 from MDAnalysis.coordinates.memory import MemoryReader
-from MDAnalysis.visualization import streamlines
+from MDAnalysis.analysis.leaflet import LeafletFinder
 import math, sys
 from MDAnalysis.lib.distances import distance_array
 import argparse
 from tqdm import tqdm
 
 ### FUNCTION
-def lipid_enrichment(helix):
+def lipid_enrichment(helix,PIP2):
     count=0
-    distances_a=distance_array(reference=pip2.positions, 
+    distances_a=distance_array(reference=PIP2.positions, 
                            configuration=helix.positions, 
                            box=u.dimensions, 
                            result=None, 
                            backend='OpenMP'
     )
-    for resOnHelix in distances_a:
-        for distance in resOnHelix:
-            if distance <=rcutoff:
-                # print(resOnHelix)
-                count+=1
-                break    ## break the loop when one distance is less than rcut
 
+    data_shape = np.shape(distances_a)
+    for row in range(data_shape[0]):
+        for col in range(data_shape[1]):
+            if distances_a[row,col]<=rcutoff:
+                count+=1
+                break  ## break the loop when one distance is less than rcut. MUST HAVE!!
     # print(count)
     return count
-
-
 
 
 # Instantiate the parser
@@ -137,18 +135,31 @@ helixb_list_label = ['helix_01b',
 'helix_09b',
 'helix_10b']
 
-pip2 = u.select_atoms("resname PLPI* and name P4",updating=True)
+pip2 = u.select_atoms("resname PLPI and name P",updating=True)
 
-print("\n###### R_cutoff is {} Angstrom\n".format(rcutoff))
+lipids = u.select_atoms("resname DPPC DSPC DUPC PLPC PLPI POPC SLPC SOPC and name P")
+lipid_com = u.select_atoms("resname DPPC DSPC DUPC PLPC PLPI POPC SLPC SOPC and name P").center_of_geometry()
 
-# print(chainA_com,chainB_com,pip2)
+############ Identify LEAFLETS
+### Assuming the MB is wrap and centered with upperleaflet positioned above the oigin
+upperleaflet = []
+lowerleaflet = []
+for lipid in lipids:
+    if lipid.position[1]>= lipid_com[1]:
+        # print(lipid.position[2],lipid_com[2])
+        upperleaflet.append(lipid)
+    else:
+        lowerleaflet.append(lipid)
+print("\nThere are %s lipids in the upperleaflet and %s lipids in the lower leaflet.\nTotal %s lipids"%(len(upperleaflet),len(lowerleaflet),len(upperleaflet)+len(lowerleaflet)))
+
 with open("PIP2_COUNT_%s.dat"%(systemname),'w+') as of:
     of.write("#frame chain helix npip2\n")
     for ts in tqdm(u.trajectory[traj_begin:traj_end:traj_skip]):
         for ind, (helixa,helixb) in enumerate(zip(helixa_list,helixb_list)):
-            counta = lipid_enrichment(helixa)
-            countb = lipid_enrichment(helixb)
+            counta = lipid_enrichment(helixa,pip2)
+            countb = lipid_enrichment(helixb,pip2)
             of.write("%s\t%s\t%s\t%s\n"%(ts.frame,"A",ind+1,counta))
             of.flush()
             of.write("%s\t%s\t%s\t%s\n"%(ts.frame,"B",ind+1,countb))
             of.flush()
+

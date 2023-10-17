@@ -3,7 +3,7 @@ import MDAnalysis as mda
 import pandas as pd
 import numpy as np
 from MDAnalysis.coordinates.memory import MemoryReader
-from MDAnalysis.analysis.leaflet import LeafletFinder
+# from MDAnalysis.analysis.leaflet import LeafletFinder
 import math, sys
 from MDAnalysis.lib.distances import distance_array
 import argparse
@@ -162,8 +162,8 @@ helixb_list_label = ['helix_01b',
 
 # pip2 = u.select_atoms("resname PLPI and name P",updating=True)
 
-# lipids = u.select_atoms("resname DPPC DSPC DUPC PLPC PLPI POPC SLPC SOPC and name P")
-# lipid_com = u.select_atoms("resname DPPC DSPC DUPC PLPC PLPI POPC SLPC SOPC and name P").center_of_geometry()
+lipids = u.select_atoms("resname DPPC DSPC DUPC PLPC PLPI POPC SLPC SOPC and name P")
+lipid_com = u.select_atoms("resname DPPC DSPC DUPC PLPC PLPI POPC SLPC SOPC and name P").center_of_geometry()
 
 ############ Identify LEAFLETS
 ### Assuming the MB is wrap and centered with upperleaflet positioned above the oigin

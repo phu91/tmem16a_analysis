@@ -4,9 +4,9 @@ import pandas as pd
 import seaborn as sns 
 import argparse
 from matplotlib import rc
+from statannot import add_stat_annotation
 
 sns.set_context("notebook")
-
 parser = argparse.ArgumentParser(description='Optional app description')
 
 parser.add_argument('--input', type=str, default='',
@@ -17,45 +17,52 @@ args = parser.parse_args()
 ifile =  args.input
 
 data = pd.read_csv(ifile,
-                 names=['Frame','Chain','Helix','pip2'],
+                 names=['Frame','Helix','Chain','Enrichment'],
                  comment='#',
                  delim_whitespace=True)
 
-# print(data)
 
 chain_list = ['A','B']
 color_list = sns.color_palette('Set2')
 
-data2 = data.groupby(['Frame','Chain']).sum()
-data2.to_csv("tmp")
-df1 = pd.read_csv("tmp")
+##### TEST
+# df = sns.load_dataset("tips")
+# x = "day"
+# y = "total_bill"
+# order = ['Sun', 'Thur', 'Fri', 'Sat']
+# ax = sns.boxplot(data=df, x=x, y=y, order=order)
+# test_results = add_stat_annotation(ax, data=df, x=x, y=y, order=order,
+#                                    box_pairs=[("Thur", "Fri"), ("Thur", "Sat"), ("Fri", "Sun")],
+#                                    test='Mann-Whitney', text_format='star',
+#                                    loc='inside', verbose=2)
+##### TEST
 
 fig,axes = plt.subplots(2,1,sharex=False,sharey=False,layout="constrained")
 axes = axes.flatten()
+g1 = sns.boxplot(data=data, 
+                x="Helix", 
+                y="Enrichment",
+                palette='Set2',
+                hue="Chain",
+                ax=axes[0])
+g1.set_ylabel("Enrichment compared to Bulk")
+g1.axhline(y = 1, color = 'black', linestyle = '--',label="Bulk") 
 
-data['pip2']=data['pip2']/60*100
-
-g1 = sns.boxplot(data=data,
-            x='Helix',
-            y='pip2',
-            ax=axes[0],
-            hue='Chain',
-            # split=True,
-            )
-
-g1.set_ylabel("% PIP2")
-
-df1['pip2']=df1['pip2']/60*100
-
-g2 = sns.boxplot(data=df1,
+x2 = "Chain"
+y2 = "Enrichment"
+order = ['A','B']
+g2 = sns.boxplot(data=data,
             x='Chain',
-            y='pip2',
+            y='Enrichment',
+            palette='Set2',
+            # hue='Chain'
             ax=axes[1]
-            # hue='Chain',
-            # split=True,
             )
-g2.set_ylabel("% PIP2")
-
+g2.set_ylabel("Enrichment compared to Bulk")
+test_results = add_stat_annotation(axes[1],data=data, x=x2, y=y2,order=order,
+                                   box_pairs=[("A", "B")],
+                                   test='Mann-Whitney', text_format='star',
+                                   loc='inside', verbose=2)
 
 # ### MISCELLANEOUS ###
 plt.suptitle("%s"%(ifile[:-4]),va='top')

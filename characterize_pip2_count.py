@@ -10,27 +10,53 @@ import argparse
 from tqdm import tqdm
 
 ### FUNCTION
-def lipid_enrichment(helix,PIP2):
+def lipid_enrichment(helix,pip2_str,rcutoff):
     count=0
-    # helix_com = helix.center_of_mass()
-    pip2_closed = u.select_atoms("sphzone %s ( protein and ( %s ) and (name PLPI and name P)"%(rcutoff,helix))
-    print(pip2_closed)
-    # distances_a=distance_array(reference=PIP2.positions, 
-    #                        configuration=helix.positions, 
-    #                        box=u.dimensions, 
-    #                        result=None, 
-    #                        backend='OpenMP'
-    # )
+    """
+    Find PIP2 (resname PLPI* and P) within the cut-off distance and then find all lipids within the cut-off sphere. 
+    Calculate the local density of each lipid in the cut-off
+    Calculate entrichment = local density (PIP2) / bulk density (PIP2)
+    """
+    # selects all atoms a certain cutoff away from another selection,
+    # e.g. around 3.5 protein selects all atoms not belonging to protein
+    # that are within 3.5 Angstroms from the protein
+    pip2_closed = u.select_atoms("(around %s (%s)) and (%s)"%(rcutoff,helix,pip2_str))
+    lipid_closed = u.select_atoms("(around %s (%s)) and (name P)"%(rcutoff,helix))
+    local_lipids = []
+    for lipid in lipid_closed:
+        if identify_lowerleaflet_lipids(lipid) is True:
+            local_lipids.append(lipid)
+    if len(local_lipids) !=0:
+        local_density = len(pip2_closed)/len(local_lipids)
+        enrichment = local_density/bulk_density()
+        # print("Helix %s Enrichment %s"%(helix,enrichment))
+        return enrichment
+    else:
+        print("Use a larger R cut off!")
+        return -1
 
-    # data_shape = np.shape(distances_a)
-    # for row in range(data_shape[0]):
-    #     for col in range(data_shape[1]):
-    #         if distances_a[row,col]<=rcutoff:
-    #             count+=1
-    #             break  ## break the loop when one distance is less than rcut. MUST HAVE!!
-    # # print(count)
-    # return count
+def identify_lowerleaflet_lipids(lipidToCheck):
+    """
+    Identify LEAFLETS and calculate the bulk density of PIP2
+    """
+    lipid_com = u.select_atoms("resname DPPC DSPC DUPC PLPC PLPI* POPC SLPC SOPC and name P").center_of_geometry()
+    if lipidToCheck.position[2]< lipid_com[1]:
+        return True
 
+def bulk_density():
+    lowerlipid=[]
+    total_pip2=[]
+    lipid_com = u.select_atoms("resname DPPC DSPC DUPC PLPC PLPI* POPC SLPC SOPC and name P").center_of_geometry()
+    lipids = u.select_atoms("resname DPPC DSPC DUPC PLPC PLPI* POPC SLPC SOPC and name P")
+    # print(lipids.resnames)
+    for lipid in lipids:
+        if lipid.position[2]< lipid_com[1]:
+            lowerlipid.append(lipid)
+        if lipid.resname=="PLPI24":
+            total_pip2.append(lipid)
+    bulk_density_pip2 = len(total_pip2)/len(lowerlipid)
+    # print("\n##### Total %s lipids and %s PIP2 in the lower leaflet. Bulk Density of PIP2 = %s"%(len(lowerlipid),len(total_pip2),bulk_density_pip2))
+    return bulk_density_pip2
 
 # Instantiate the parser
 parser = argparse.ArgumentParser(description='Optional app description')
@@ -53,7 +79,7 @@ parser.add_argument('--skip', type=int, default=1,
 parser.add_argument('--system', type=str, default='UNKNOWN',
                     help='Add a system name to output file')
 
-parser.add_argument('--rcut', type=int, default=3.5,
+parser.add_argument('--rcutoff', type=float, default=3.5,
                     help='R cutoff value. Default = 3.5 Angstrom')
 
 args = parser.parse_args()
@@ -64,7 +90,7 @@ traj_begin = args.begin
 traj_end = args.end
 traj_skip = args.skip
 systemname = args.system
-rcutoff = args.rcut
+rcutoff = args.rcutoff
 
 u = mda.Universe(top_file,traj_file)
 
@@ -160,31 +186,21 @@ helixb_list_label = ['helix_01b',
 'helix_09b',
 'helix_10b']
 
-# pip2 = u.select_atoms("resname PLPI and name P",updating=True)
+pip2 = "resname PLPI* and name P"
 
-lipids = u.select_atoms("resname DPPC DSPC DUPC PLPC PLPI POPC SLPC SOPC and name P")
-lipid_com = u.select_atoms("resname DPPC DSPC DUPC PLPC PLPI POPC SLPC SOPC and name P").center_of_geometry()
+if rcutoff is None:
+    print("'\n##### A default RCUTOFF of 3.5 Angstrom is used\n")
+else:
+    print("\n##### RCUTOFF is %s Angstrom\n"%(rcutoff))
 
-############ Identify LEAFLETS
-### Assuming the MB is wrap and centered with upperleaflet positioned above the oigin
-upperleaflet = []
-lowerleaflet = []
-for lipid in lipids:
-    if lipid.position[1]>= lipid_com[1]:
-        # print(lipid.position[2],lipid_com[2])
-        upperleaflet.append(lipid)
-    else:
-        lowerleaflet.append(lipid)
-print("\nThere are %s lipids in the upperleaflet and %s lipids in the lower leaflet.\nTotal %s lipids"%(len(upperleaflet),len(lowerleaflet),len(upperleaflet)+len(lowerleaflet)))
-
-# with open("PIP2_COUNT_%s.dat"%(systemname),'w+') as of:
-#     of.write("#frame chain helix npip2\n")
-#     for ts in tqdm(u.trajectory[traj_begin:traj_end:traj_skip]):
-#         for ind, (helixa,helixb) in enumerate(zip(helixa_list,helixb_list)):
-#             counta = lipid_enrichment(helixa,pip2)
-#             countb = lipid_enrichment(helixb,pip2)
-#             of.write("%s\t%s\t%s\t%s\n"%(ts.frame,"A",ind+1,counta))
-#             of.flush()
-#             of.write("%s\t%s\t%s\t%s\n"%(ts.frame,"B",ind+1,countb))
-#             of.flush()
+with open("PIP2_COUNT_%s.dat"%(systemname),'w+') as of:
+    of.write("#frame helix chain enrichment\n")
+    for ts in tqdm(u.trajectory[traj_begin:traj_end:traj_skip]):
+        for ind, (helixa,helixb) in enumerate(zip(helixa_list,helixb_list)):
+            lipid_enrichment_a = lipid_enrichment(helixa,pip2,rcutoff)
+            lipid_enrichment_b = lipid_enrichment(helixb,pip2,rcutoff)
+            of.write("%s\t%s\t%s\t%s\n"%(ts.frame,ind+1,"A",lipid_enrichment_a))
+            of.flush()
+            of.write("%s\t%s\t%s\t%s\n"%(ts.frame,ind+1,"B",lipid_enrichment_b))
+            of.flush()
 

@@ -64,7 +64,7 @@ durations_bs = li.compute_site_duration()
 occupancies_bs = li.compute_site_occupancy()
 lipidcounts_bs = li.compute_site_lipidcount()
 
-koff_BS, res_time_BS = li.compute_site_koff(plot_data=True)
+# koff_BS, res_time_BS = li.compute_site_koff(plot_data=True)
 
 surface_area = li.compute_surface_area(plot_data=True)
 surface_area.to_csv("SURFACE_AREA.csv",sep='\t')

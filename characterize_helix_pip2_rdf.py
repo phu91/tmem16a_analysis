@@ -9,8 +9,9 @@ import math, sys
 from MDAnalysis.lib.distances import distance_array
 import seaborn as sns 
 import argparse
-
-sns.set_context("paper")
+import warnings
+# suppress some MDAnalysis warnings about writing PDB files
+warnings.filterwarnings('ignore')
 
 # FUNCTIONS
 
@@ -18,6 +19,15 @@ def rdf_pip2_analysis(helix_name,skipping):
     rdf = InterRDF(helix_name,pip2,range=[0.0,30.0],nbins=150)
     rdf.run(step=skipping)
     return rdf
+
+def extract_frames(startFrame,endFrame):
+    all = u.select_atoms("all")
+    with mda.Writer("SEGMENT_FRAME_%s_TO_%s.pdb"%(startFrame,endFrame)) as pdb:
+        pdb.write(all)
+
+    with mda.Writer("SEGMENT_FRAME_%s_TO_%s.xtc"%(startFrame,endFrame), all.n_atoms) as W:
+        for ts in u.trajectory[startFrame:endFrame:traj_skip]:
+            W.write(all)
 
 # Instantiate the parser
 parser = argparse.ArgumentParser(description='Optional app description')
@@ -27,6 +37,12 @@ parser.add_argument('--top', type=str,
 
 parser.add_argument('--traj', type=str,
                     help='A required topology (XTC, DCD, etc.) file')
+
+parser.add_argument('--begin', type=int, default=1,
+                    help='Starting Frame. Default = 1 FRAME 1')
+
+parser.add_argument('--end', type=int, default=-1,
+                    help='Ending Frame. Default = -1 ALL FRAME')
 
 parser.add_argument('--skip', type=int, default=1,
                     help='Skipping rate for Radial Distribution Function calculations. Default = 1 frames')
@@ -42,6 +58,8 @@ args = parser.parse_args()
 
 top_file =  args.top
 traj_file = args.traj
+traj_begin = args.begin
+traj_end = args.end
 traj_skip = args.skip
 systemname = args.system
 # chain_name = args.chain
@@ -71,8 +89,6 @@ helix_07b = u.select_atoms("segid PROB and resid 692 to 713")
 helix_08b = u.select_atoms("segid PROB and resid 714 to 738")
 helix_09b = u.select_atoms("segid PROB and resid 753 to 775")
 helix_10b = u.select_atoms("segid PROB and resid 854 to 881")
-
-pip2 = u.select_atoms("resname PLPI* and name P*")
 
 helixa_list = [helix_01a,
 helix_02a,
@@ -117,6 +133,30 @@ helixb_list_label = ['helix_01b',
 'helix_08b',
 'helix_09b',
 'helix_10b']
+
+pip2 = u.select_atoms("resname PLPI* and name P*")
+
+if traj_end != -1:
+    extract_frames(traj_begin,traj_end)
+    u = mda.Universe("SEGMENT_FRAME_%s_TO_%s.pdb"%(traj_begin,traj_end),
+                     "SEGMENT_FRAME_%s_TO_%s.xtc"%(traj_begin,traj_end),
+                     in_memory=True)
+    print("\n########################################################")
+    print("TOP : SEGMENT_FRAME_%s_TO_%s.pdb"%(traj_begin,traj_end))
+    print("TRAJ: SEGMENT_FRAME_%s_TO_%s.xtc"%(traj_begin,traj_end))
+    # print("NUMBER OF ATOMS (ORIGINAL): %s"%(n_atom_origin))
+    # print("NUMBER OF ATOMS (CURRENT) : %s"%(len(u.atoms)))
+    print("NUMBER OF FRAMES: %s"%(len(u.trajectory)))
+    print("########################################################\n")
+else:
+    print("\n########################################################")
+    print("TOP : %s"%(top_file))
+    print("TRAJ: %s"%(traj_file))
+    # print("NUMBER OF ATOMS (ORIGINAL): %s"%(n_atom_origin))
+    # print("NUMBER OF ATOMS (CURRENT) : %s"%(len(u.atoms)))
+    print("NUMBER OF FRAMES: %s"%(len(u.trajectory)))
+    print("########################################################\n")
+    pass
 
 with open("RDF_profile_%s.dat"%(systemname),"w+") as rdf_out:
     rdf_out.write("#  helix chain radius gofR\n")

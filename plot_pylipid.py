@@ -29,8 +29,9 @@ df['system'] = 'NEW'
 
 
 sns.lineplot(data=df,
-             x='ResidueID',
-             y='Duration',
-             marker='o')
+             x='BindingSiteID',
+             y='BindingSiteDuration',
+            #  marker='o'
+             )
 
 plt.show()

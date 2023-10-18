@@ -32,7 +32,7 @@ def lipid_enrichment(helix,pip2_str,rcutoff):
         # print("Helix %s Enrichment %s"%(helix,enrichment))
         return enrichment
     else:
-        print("Use a larger R cut off!")
+        # print("Use a larger R cut off!")
         return -1
 
 def identify_lowerleaflet_lipids(lipidToCheck):

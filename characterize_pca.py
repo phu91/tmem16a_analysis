@@ -2,9 +2,7 @@
 import MDAnalysis as mda
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import math, sys
-import seaborn as sns 
 import argparse
 from MDAnalysis.coordinates.memory import MemoryReader
 from MDAnalysis.analysis import pca, align
@@ -14,29 +12,28 @@ import warnings
 # suppress some MDAnalysis warnings about writing PDB files
 warnings.filterwarnings('ignore')
 
-sns.set_context("paper")
-
 # FUNCTIONS
 def pca_calculation(selected_str,nComponent,skipping):
     # Aligning the traj to the REF frame. ALIGNMENT ON EACH SEGMENT
-    # aligner = align.AlignTraj(u,u ,
-    #                       select=selected_str,
-    #                       in_memory=True).run(step=skipping)
-    print("############# Principal Component Analysis\n")
-    pc = pca.PCA(u, 
-                select=selected_str,
-                align=True,
+    aligner = align.AlignTraj(u,u0,
+                          select=selected_str,
+                          in_memory=True).run(step=skipping)
+    # print(aligner)
+    # print("############# Principal Component Analysis\n")
+    pc = pca.PCA(u,
+                select='protein and backbone',
+                # align=True,
                 n_components=nComponent).run(step=skipping)
     return pc
 
 def extract_frames(startFrame,endFrame):
-    all = u.select_atoms("all")
+    whole_backbone = u.select_atoms("protein and backbone")
     with mda.Writer("SEGMENT_FRAME_%s_TO_%s.pdb"%(startFrame,endFrame)) as pdb:
-        pdb.write(protein)
+        pdb.write(whole_backbone)
 
     with mda.Writer("SEGMENT_FRAME_%s_TO_%s.xtc"%(startFrame,endFrame), all.n_atoms) as W:
         for ts in u.trajectory[startFrame:endFrame:traj_skip]:
-            W.write(protein)
+            W.write(whole_backbone)
 
 # Instantiate the parser
 parser = argparse.ArgumentParser(description='Optional app description')
@@ -78,6 +75,9 @@ selectionatom=args.sel
 ncomponent = args.npc
 
 u = mda.Universe(top_file,traj_file,in_memory=True)
+u0 = mda.Universe(top_file,traj_file)
+u0.trajectory[0]
+
 n_atom_origin = len(u.atoms)
 
 # Define SELECTIONS

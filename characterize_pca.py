@@ -14,14 +14,17 @@ warnings.filterwarnings('ignore')
 
 # FUNCTIONS
 def pca_calculation(selected_str,nComponent,skipping):
-    # Aligning the traj to the REF frame. ALIGNMENT ON EACH SEGMENT
+    """ Align the trajectory to the first frame with the selected chain. Calculate PC1, PC2 of the
+        whole "template_out" (protein and backbone OR name CA) based on the aligment to each chain.
+        RETURN: PC1, PC2 of the whole structure. 
+    """
     aligner = align.AlignTraj(u,u0,
                           select=selected_str,
                           in_memory=True).run(step=skipping)
     # print(aligner)
-    # print("############# Principal Component Analysis\n")
+    print("############# Principal Component Analysis\n")
     pc = pca.PCA(u,
-                select='protein and backbone',
+                select=template_out,
                 # align=True,
                 n_components=nComponent).run(step=skipping)
     return pc
@@ -57,10 +60,13 @@ parser.add_argument('--system', type=str, default='UNKNOWN',
                     help='Add a system name to output file')
 
 parser.add_argument('--npc', type=int, default=3,
-                    help='Number of Principal Components')
+                    help='Number of Principal Components. Default = 3')
 
-parser.add_argument('--sel', type=str, default='backbone',
+parser.add_argument('--sel', type=str, default='name CA',
                     help='Using VMD selection with " ". Default: backbone')
+
+parser.add_argument('--ref', type=str, default='step5_input.pdb',
+                    help='If not provided, use default output (step5_input.pdb) from CHARMM-GUI as the reference (Default)')
 
 args = parser.parse_args()
 
@@ -73,22 +79,29 @@ traj_end = args.end
 systemname = args.system
 selectionatom=args.sel
 ncomponent = args.npc
+reference = args.ref
 
 u = mda.Universe(top_file,traj_file,in_memory=True)
-u0 = mda.Universe(top_file,traj_file)
-u0.trajectory[0]
+u0 = mda.Universe(top_file,reference)
+
 
 n_atom_origin = len(u.atoms)
 
-# Define SELECTIONS
-chainA = u.select_atoms("protein and segid PROA and %s"%(selectionatom),updating=True)
-chainB = u.select_atoms("protein and segid PROB and %s"%(selectionatom),updating=True)
+# Define SELECTIONS ## USE CA atom for faster testing. Change back to 'backbone' in production run
+# chainA = u.select_atoms("protein and segid PROA and %s"%(selectionatom),updating=True)
+# chainB = u.select_atoms("protein and segid PROB and %s"%(selectionatom),updating=True)
 
 chain_str = ['protein and segid PROA and %s'%(selectionatom),
-             'protein and segid PROB and %s'%(selectionatom)]
+             'protein and segid PROB and %s'%(selectionatom),
+             'protein and %s'%(selectionatom),
+]
 
 chain_list = ['PROA',
-              'PROB']
+              'PROB',
+              'WHOLE']
+
+#### TEMPLATE TO PROJECT PC ON
+template_out = 'protein and %s'%(selectionatom)
 
 if traj_end != -1:
     extract_frames(traj_begin,traj_end)
@@ -113,13 +126,16 @@ else:
     pass
 
 with open("PCA_DATA_%s.csv"%(systemname),"w+") as pca_out:
-    pca_out.write("# Frame PC1 PC2 PC3 Chain ps\n")
+    pca_out.write("# Frame PC1 PC2 PC3 Aligned ps\n")
     for ind, (chain) in enumerate((chain_str)):
         pca_result = pca_calculation(chain,ncomponent,skipping=traj_skip)
-        selected_segment = u.select_atoms(chain)
-        transformed = pca_result.transform(selected_segment, n_components=ncomponent)
+        # print(pca_result)
 
-        # Projecting PC1 to structure
+        selected_segment = u.select_atoms(template_out)
+        transformed = pca_result.transform(selected_segment, n_components=ncomponent)
+        df = pd.DataFrame(transformed,
+                  columns=['PC{}'.format(i+1) for i in range(ncomponent)])        
+
         print("############# Projecting PC1 to structure\n")
         pc1 = pca_result.p_components[:,0]
         trans1 = transformed[:,0]
@@ -127,15 +143,25 @@ with open("PCA_DATA_%s.csv"%(systemname),"w+") as pca_out:
         coordinates = projected.reshape(len(trans1), -1, 3)
         proj1 = mda.Merge(selected_segment)
         proj1.load_new(coordinates, order="fac")
-        proj1_selected = proj1.select_atoms("all")
-        proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
-        proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames='all')
-
-        df = pd.DataFrame(transformed,
-                  columns=['PC{}'.format(i+1) for i in range(ncomponent)])
-        if ind ==0:
+        if ind==0:
+            # proj1_selected = proj1.select_atoms("segid %s"%(chain_list[ind]))
+            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
+            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames='all')
             df['Chain'] = 'A'
-        else: df['Chain'] = 'B'
+        elif ind==1:
+            # proj1_selected = proj1.select_atoms("segid %s"%(chain_list[ind]))
+            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
+            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames='all')
+            df['Chain'] = 'B'
+        elif ind==2:
+            # proj1_selected = proj1.select_atoms(chain_list[ind])
+            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
+            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames='all')
+            df['Chain'] = 'C'
+
         df['ps'] = df.index * u.trajectory.dt
+        # print(df)
         for row in tqdm(df.itertuples(),desc='Writing output for %s'%(chain),total=len(u.trajectory)):
             pca_out.write("%s\t%s\t%s\t%s\t%s\t%s\n"%(row[0],row[1],row[2],row[3],row[4],row[5]))
+            pca_out.flush()
+

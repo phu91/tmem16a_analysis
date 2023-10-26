@@ -144,19 +144,19 @@ with open("PCA_DATA_%s.csv"%(systemname),"w+") as pca_out:
         proj1 = mda.Merge(selected_segment)
         proj1.load_new(coordinates, order="fac")
         if ind==0:
-            # proj1_selected = proj1.select_atoms("segid %s"%(chain_list[ind]))
-            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
-            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames='all')
+            proj1_selected = proj1.select_atoms("%s"%(chain_str[ind]))
+            proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
+            proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames=proj1.trajectory[::100])
             df['Chain'] = 'A'
         elif ind==1:
-            # proj1_selected = proj1.select_atoms("segid %s"%(chain_list[ind]))
-            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
-            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames='all')
+            proj1_selected = proj1.select_atoms("%s"%(chain_str[ind]))
+            proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
+            proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames=proj1.trajectory[::100])
             df['Chain'] = 'B'
         elif ind==2:
-            # proj1_selected = proj1.select_atoms(chain_list[ind])
-            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
-            # proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames='all')
+            proj1_selected = proj1.select_atoms("%s"%chain_str[ind])
+            proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.pdb'%(chain_list[ind],systemname))
+            proj1_selected.write('PCA_PC1_PROJECTED_%s_%s.dcd'%(chain_list[ind],systemname),frames=proj1.trajectory[::100])
             df['Chain'] = 'C'
 
         df['ps'] = df.index * u.trajectory.dt

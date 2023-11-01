@@ -1,104 +1,122 @@
-# Updated on 11/29/2022
 import MDAnalysis as mda
 import pandas as pd
 import numpy as np
-from MDAnalysis.analysis import hole2, dihedrals
-import os 
-import warnings
-warnings.filterwarnings("ignore")
-import re
-import mdtraj as md
-import sys
-# import dask
-# import dask.multiprocessing
-# dask.config.set(scheduler='processes')
-# from dask.distributed import Client
+import math, sys
+import argparse
 from MDAnalysis.coordinates.memory import MemoryReader
-import matplotlib.pyplot as plt
+from tqdm import tqdm
+from MDAnalysis.analysis import dihedrals
+import warnings
+# suppress some MDAnalysis warnings about writing PDB files
+warnings.filterwarnings('ignore')
 
-def cal_dihedral_omega(frame,residueList):
+def cal_dihedral(residueList):
+    results = []
     omegas = [res.omega_selection() for res in residueList.residues]
-    dihs = dihedrals.Dihedral(omegas).run(start=frame,stop=frame+1)
-    return dihs.results.angles
+    omega = dihedrals.Dihedral(omegas).run(step=traj_skip)
 
-def cal_dihedral_phi(frame,residueList):
     phis = [res.phi_selection() for res in residueList.residues]
-    dihs = dihedrals.Dihedral(phis).run(start=frame,stop=frame+1)
-    return dihs.results.angles
-
-def cal_dihedral_psi(frame,residueList):
+    phi = dihedrals.Dihedral(phis).run(step=traj_skip)
     psis = [res.psi_selection() for res in residueList.residues]
-    dihs = dihedrals.Dihedral(psis).run(start=frame,stop=frame+1)
-    return dihs.results.angles
+    psi = dihedrals.Dihedral(psis).run(step=traj_skip)
+    
+    # print(np.shape(omega.results.angles))
+    for ind,a in enumerate(residueList.residues.segids):
+        for frame,(b,c,d) in enumerate(zip(omega.results.angles,phi.results.angles,psi.results.angles)):
+            results.append((frame,a[-1],residueList.residues.resnames[ind],residueList.residues.resids[ind],b[ind],c[ind],d[ind],systemname))
+    results_df = pd.DataFrame(results,columns=['#FRAME','CHAIN','RESIDUE NAME','RESID','OMEGA','PHI','PSI','SYSTEM'])
+    return results_df
 
-top_file = sys.argv[1]   #PSF
-traj_file = sys.argv[2]
+def extract_frames(startFrame,endFrame):
+    whole_backbone = u.select_atoms("all")
+    with mda.Writer("SEGMENT_FRAME_%s_TO_%s.pdb"%(startFrame,endFrame)) as pdb:
+        pdb.write(whole_backbone)
 
-# print(top_file,traj_file)
-chainA = "protein and segid PROA"
-chainB = "protein and segid PROB"
+    with mda.Writer("SEGMENT_FRAME_%s_TO_%s.xtc"%(startFrame,endFrame), all.n_atoms) as W:
+        for ts in u.trajectory[startFrame:endFrame:traj_skip]:
+            W.write(whole_backbone)
+            
+# Instantiate the parser
+parser = argparse.ArgumentParser(description='Optional app description')
+# Required positional argument
+parser.add_argument('--top', type=str,
+                    help='A required topology (PSF, PDB, etc.) file')
 
-u = mda.Universe(top_file,traj_file)
+parser.add_argument('--traj', type=str,
+                    help='A required topology (XTC, DCD, etc.) file')
 
-all = u.select_atoms("all")
-chloride = u.select_atoms("index 148924")
+parser.add_argument('--begin', type=int, default=1,
+                    help='Starting Frame. Default = 1 FRAME 1')
 
-## ONLY SELECT CHAIN A WITH THE BINDING Chloride 148924
-asn646 = u.select_atoms("protein and segid PROA and resid 646") 
-lys584 = u.select_atoms("protein and segid PROA and resid 584")
-gln645 = u.select_atoms("protein and segid PROA and resid 645")
-lys641 = u.select_atoms("protein and segid PROA and resid 641")
-asp550 = u.select_atoms("protein and segid PROA and resid 550")
+parser.add_argument('--end', type=int, default=-1,
+                    help='Ending Frame. Default = -1 ALL FRAME')
 
-inner_vestibule_a = u.select_atoms("protein and segid PROA and resid 646 584 645 641 550")
-inner_vestibule_b = u.select_atoms("protein and segid PROB and resid 646 584 645 641 550")
+parser.add_argument('--skip', type=int, default=1,
+                    help='Skipping rate for Radial Distribution Function calculations. Default = 1 frames')
 
-# print(inner_vestibule.residues)
-with open("dihedral_profile.dat","w+") as of:
-    of.write("#protein and segid PROA | PROB and resid 646 584 645 641 550 for OMEGA | PHI | PSI (ordered)\n")
-    for ts in u.trajectory[::10]:
-        print("FRAME %s\n"%(ts.frame))
-        frame = ts.frame
-        omega_a = cal_dihedral_omega(ts.frame,inner_vestibule_a)
-        omega_b = cal_dihedral_omega(ts.frame,inner_vestibule_b)
-        phi_a   = cal_dihedral_phi(ts.frame,inner_vestibule_a)
-        phi_b   = cal_dihedral_phi(ts.frame,inner_vestibule_b)
-        psi_a   = cal_dihedral_psi(ts.frame,inner_vestibule_a)
-        psi_b   = cal_dihedral_psi(ts.frame,inner_vestibule_b)
+parser.add_argument('--system', type=str, default='UNKNOWN',
+                    help='Add a system name to output file')
 
-        for i,j,k,l,m,n in zip(omega_a,omega_b,phi_a,phi_b,psi_a,psi_b):
-            of.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"%(frame,
-                                                                   i[0],i[1],i[2],i[3],i[4],
-                                                                   j[0],j[1],j[2],j[3],j[4],
-                                                                   k[0],k[1],k[2],k[3],k[4],
-                                                                   l[0],l[1],l[2],l[3],l[4],
-                                                                   m[0],m[1],m[2],m[3],m[4],
-                                                                   n[0],n[1],n[2],n[3],n[4]))
-            of.flush()
+parser.add_argument('--npc', type=int, default=3,
+                    help='Number of Principal Components. Default = 3')
 
+parser.add_argument('--sel', type=str, default='name CA',
+                    help='Using VMD selection with " ". Default: all')
 
-# print(dihs.results)
+parser.add_argument('--ref', type=str, default='step5_input.pdb',
+                    help='If not provided, use default output (step5_input.pdb) from CHARMM-GUI as the reference (Default)')
 
-# labels = ["Res %s"%(n) for n in inner_vestibule.residues.resids]
-# print(labels)
-
-# for ang,label in zip(dihs.angles.T,labels):
-    # plt.plot(ang, label=label)
-
-# plt.legend()
-# plt.show()
-# for ts in u.trajectory[::]:
+args = parser.parse_args()
 
 
+top_file =  args.top
+traj_file = args.traj
+traj_skip = args.skip
+traj_begin = args.begin
+traj_end = args.end
+systemname = args.system
+selectionatom=args.sel
+ncomponent = args.npc
+reference = args.ref
 
+u = mda.Universe(top_file,traj_file,in_memory=True)
+glu425 = u.select_atoms("protein and resid 425",updating=True)
+asp879 = u.select_atoms("protein and resid 879",updating=True) 
+asp884 = u.select_atoms("protein and resid 884",updating=True)
 
-# for ts in u.trajectory[::]:
-    # pore_cen_A = u.select_atoms("%s"%(chainA)).center_of_geometry()
-    # pore_cen_B = u.select_atoms("%s"%(chainB)).center_of_geometry()
-    # pore_radius_A = pore_size(pore_cen_A,ts.frame,"A")
-    # pore_radius_B = pore_size(pore_cen_B,ts.frame,"B")
+triad_list = [glu425,asp879,asp884]
 
+if traj_end != -1:
+    extract_frames(traj_begin,traj_end)
+    u = mda.Universe("SEGMENT_FRAME_%s_TO_%s.pdb"%(traj_begin,traj_end),
+                     "SEGMENT_FRAME_%s_TO_%s.xtc"%(traj_begin,traj_end),
+                     in_memory=True)
+    print("\n########################################################")
+    print("TOP : SEGMENT_FRAME_%s_TO_%s.pdb"%(traj_begin,traj_end))
+    print("TRAJ: SEGMENT_FRAME_%s_TO_%s.xtc"%(traj_begin,traj_end))
+    # print("NUMBER OF ATOMS (ORIGINAL): %s"%(n_atom_origin))
+    # print("NUMBER OF ATOMS (CURRENT) : %s"%(len(u.atoms)))
+    print("NUMBER OF FRAMES: %s"%(len(u.trajectory)))
+    print("########################################################\n")
+else:
+    print("\n########################################################")
+    print("TOP : %s"%(top_file))
+    print("TRAJ: %s"%(traj_file))
+    # print("NUMBER OF ATOMS (ORIGINAL): %s"%(n_atom_origin))
+    # print("NUMBER OF ATOMS (CURRENT) : %s"%(len(u.atoms)))
+    print("NUMBER OF FRAMES: %s"%(len(u.trajectory)))
+    print("########################################################\n")
+    pass
 
-#	pore_water_A = hydration_number(chainA,pore_radius_avg_A)
-#	pore_water_B = hydration_number(chainB,pore_radius_avg_B)
+dihedral_glu425 = cal_dihedral(glu425)
+dihedral_asp879 = cal_dihedral(asp879)
+dihedral_asp884 = cal_dihedral(asp884)
+
+dihedral_profiles = pd.concat([dihedral_glu425,dihedral_asp879,dihedral_asp884],ignore_index=True)
+dihedral_profiles.to_csv("DIHEDRAL_%s.csv"%(systemname),
+                        sep='\t',
+                        float_format='%.3f',
+                        index=False
+                        )
+
 

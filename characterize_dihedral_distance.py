@@ -20,11 +20,16 @@ def cal_dihedral(residueList):
     psis = [res.psi_selection() for res in residueList.residues]
     psi = dihedrals.Dihedral(psis).run(step=traj_skip)
     
+    # chi1s =[res.chi1_selection() for res in residueList.residues]
+    # print(chi1s)
+    chi = dihedrals.Janin(residueList).run(step=traj_skip)
+    print(chi.results.angles)
+    
     # print(np.shape(omega.results.angles))
     for ind,a in enumerate(residueList.residues.segids):
-        for frame,(b,c,d) in enumerate(zip(omega.results.angles,phi.results.angles,psi.results.angles)):
-            results.append((frame,a[-1],residueList.residues.resnames[ind],residueList.residues.resids[ind],b[ind],c[ind],d[ind],systemname))
-    results_df = pd.DataFrame(results,columns=['#FRAME','CHAIN','RESIDUE NAME','RESID','OMEGA','PHI','PSI','SYSTEM'])
+        for frame,(b,c,d,e) in enumerate(zip(omega.results.angles,phi.results.angles,psi.results.angles,chi.results.angles)):
+            results.append((frame,a[-1],residueList.residues.resnames[ind],residueList.residues.resids[ind],b[ind],c[ind],d[ind],e[0][ind],e[1][ind],systemname))
+    results_df = pd.DataFrame(results,columns=['#FRAME','CHAIN','RESIDUE NAME','RESID','OMEGA','PHI','PSI','CHI1','CHI2','SYSTEM'])
     return results_df
 
 def extract_frames(startFrame,endFrame):

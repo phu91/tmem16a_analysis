@@ -18,18 +18,25 @@ ifile =  args.input
 
 data = pd.read_csv(ifile,comment='#',
                    delim_whitespace=True,
-                   names=['FRAME','CHAIN','RESIDUE NAME','RESID','OMEGA','PHI','PSI','SYSTEM'])
+                   names=['FRAME','CHAIN','RESIDUE NAME','RESID','OMEGA','PHI','PSI','CHI1','CHI2','SYSTEM'])
                    
 # print(data)
-sns.lineplot(data=data,
-            x='FRAME',
-            y='OMEGA',
+g = sns.kdeplot(data=data,
+            x='CHI1',
+            y='CHI2',
             style='CHAIN',
             hue='RESID',
             # markers=True,
             palette='Set1',
             )
-
+g = sns.scatterplot(data=data,
+            x='CHI1',
+            y='CHI2',
+            style='CHAIN',
+            hue='RESID',
+            # markers=True,
+            palette='Set1',
+            )
 color_list = sns.color_palette('Set2')
 
 

@@ -1,15 +1,10 @@
-#!/bin/sh
+#!/bin/bash 
 
-module load gromacs
-vmd -e change_chain.tcl
+module load gromacs 
+XTC=$1
+SYSTEM=$2	
 
-gmx make_ndx -f corrected_chain.pdb -n index_2.ndx -o index_corr.ndx << EOF
-chain A & a CA
-chain B & a CA
-q
-EOF
+echo q | gmx make_ndx -f step5_input.pdb -o index_new.ndx
 
-echo 6 6 | ~/Downloads/g_correlation_1_0_3/g_correlation_src/g_correlation -f *_fixedPBC*.xtc -s corrected_chain.pdb -n index_corr.ndx -skip 10 -o correlA.dat
-
-echo 7 7 | ~/Downloads/g_correlation_1_0_3/g_correlation_src/g_correlation -f *_fixedPBC*.xtc -s corrected_chain.pdb -n index_corr.ndx -skip 10 -o correlB.dat
-
+echo 3 3 | /mnt/home/ptang/ceph/5-TMEM16A/delta-EAVK/1-MD/tmem16a_analysis/g_correlation_mpi -f $XTC -o correl_$SYSTEM.dat -s step5_input.pdb -n index_new.ndx -linear
+echo 3 3 | /mnt/home/ptang/ceph/5-TMEM16A/delta-EAVK/1-MD/tmem16a_analysis/g_correlation_mpi -f $XTC -o mutual_$SYSTEM.dat -s step5_input.pdb -n index_new.ndx -linear -mi 

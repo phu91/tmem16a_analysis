@@ -39,7 +39,7 @@ def plot_bendix(dataFrame,kind,background):
         #                                    test='Mann-Whitney', text_format='star',
         #                                    loc='inside', verbose=2)
         plt.suptitle("BOX_%s"%(ifile[:-4]),va='top')
-    elif kind=='line':
+    else:
         ### MAKE LINEPLOT FOR TIME
         fig,axes = plt.subplots(2,4,sharex=False,sharey=True,layout="constrained")
         # axes = axes.flatten()
@@ -64,37 +64,7 @@ def plot_bendix(dataFrame,kind,background):
                 # g.axhline(y = 20, zorder=0,color = 'white', linestyle = '--',label="Straight") 
                 # g.axhline(y = 90, zorder=0,color = 'red', linestyle = '--',label="Broken")     
         plt.suptitle("LINE_%s"%(ifile[:-4]),va='top')
-    elif kind=='2d':
-        fig,axes = plt.subplots(2,2,sharex=False,sharey=True,layout="constrained")
-        axes = axes.flatten()
-        # print(axes)
-        # rep_list=['1','2']
-        order=['0A0B','3A1B','3A3B','3A0B']
-        # data = pd.melt(id_var['CHAIN','SYSTEM'])
-        a = data.query("CHAIN=='A'")
-        b = data.query("CHAIN=='B'")
-        # print(a,b)
-        new_data = pd.DataFrame(({'A':a.reset_index().ANGLE,
-                                  'B':b.reset_index().ANGLE,
-                                  'SYSTEM':a.reset_index().SYSTEM}))
-   
-        # print(new_data)
-        for col in np.arange(len(order)):
-                # print(order[col], rep_list[row])
-            # print(ax)
-            g = sns.kdeplot(data=new_data.query("SYSTEM=='%s'"%(order[col])),
-                                x='A',
-                                y='B',
-                                # hue='CHAIN',
-                                # style='SYSTEM',
-                                palette='Set2',
-                                ax=axes[col])
-            g.set_title(" %s"%(order[col]))
-        #     # g.set_ylabel("MAXIMUM BENDING ANGLE")
-        #         # g.axhline(y = 20, zorder=0,color = 'white', linestyle = '--',label="Straight") 
-        #         # g.axhline(y = 90, zorder=0,color = 'red', linestyle = '--',label="Broken")     
-        # plt.suptitle("LINE_%s"%(ifile[:-4]),va='top')
-       
+
     # ### MISCELLANEOUS ###
     plt.rcParams['ps.useafm'] = True
     rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})

@@ -6,10 +6,14 @@ import argparse
 from matplotlib import rc
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 sns.set_context("talk")
 =======
 sns.set_context("notebook")
 >>>>>>> pip2
+=======
+sns.set_context("talk")
+>>>>>>> 412b5a255f3017dd65aa1dd65a64a731574bb88b
 
 parser = argparse.ArgumentParser(description='Optional app description')
 
@@ -23,6 +27,9 @@ ifile =  args.input
 data = pd.read_csv(ifile,comment='#',
                    delim_whitespace=True,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 412b5a255f3017dd65aa1dd65a64a731574bb88b
                    names=['helix','chain','resid','rmsf'])
 
 
@@ -43,6 +50,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 plt.rcParams['pdf.fonttype'] = 42
 plt.gcf().set_size_inches(18,7.5)
 plt.locator_params(axis='both', nbins=5)
+<<<<<<< HEAD
 =======
                    names=['chain','resname','resid','rmsf','system'])
 
@@ -83,6 +91,8 @@ plt.rcParams['pdf.fonttype'] = 42
 plt.gcf().set_size_inches(14,8)   ## Wide x Height
 # plt.locator_params(axis='both', nbins=5)
 >>>>>>> pip2
+=======
+>>>>>>> 412b5a255f3017dd65aa1dd65a64a731574bb88b
 plt.tight_layout()
 plt.savefig("%s"%(ifile[:-3]))
 plt.show()

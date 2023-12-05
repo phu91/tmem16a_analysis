@@ -81,7 +81,6 @@ args = parser.parse_args()
 top_file =  args.top
 traj_file = args.traj
 traj_skip = args.skip
-pore_topology = args.pore
 cutoff = args.cutoff
 systemname = args.system
 

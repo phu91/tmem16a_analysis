@@ -14,11 +14,11 @@ from MDAnalysis.analysis import hole2
 from tqdm import tqdm
 
 def pore_radius_calculations(selection_frame,chain,frame,center_of_pore):
-    working_dir ='hole2_output'
+    working_dir ='hole2_output_%s'%(systemname)
     profiles = hole2.hole(selection_frame,
                 executable='~/hole2/exe/hole',
                 outfile=working_dir+'/hole_chain_%s_frame_%i.out'%(chain,frame),
-                # sphpdb_file=working_dir+'/hole_chain_%s_frame_%i.sph'%(chain,frame),
+                sphpdb_file=working_dir+'/hole_chain_%s_frame_%i.sph'%(chain,frame),
                 vdwradii_file=None,
                 random_seed=rnd.randrange(100000),
                 keep_files=True,
@@ -45,11 +45,11 @@ def pore_radius_calculations(selection_frame,chain,frame,center_of_pore):
 
 def pore_radius_per_frame(pore_center,frame,chain):
     try:
-        os.makedirs("./hole2_output",exist_ok=True)
+        os.makedirs("./hole2_output_%s"%(systemname),exist_ok=True)
     except OSError as error:
         print(error)
 
-    working_dir ='hole2_output'
+    working_dir ='hole2_output_%s'%(systemname)
     if chain=='A':
         sel_frame = working_dir+"/tmpA_frame_%s.pdb"%(frame)
         sel = u.select_atoms("segid PROA").write(sel_frame)
@@ -92,7 +92,7 @@ cutoff = args.cutoff
 systemname = args.system
 
 u = mda.Universe(top_file,traj_file)
-os.system("rm hole2_output/*.out")
+os.system("rm hole2_output_%s/*.out"%(systemname))
 
 with open('PORE_PROFILE_%s.dat'%(systemname),'w+') as file_out:
     file_out.write("#frame chain z_coord radius\n")
@@ -112,5 +112,5 @@ with open('PORE_PROFILE_%s.dat'%(systemname),'w+') as file_out:
             file_out.flush()
         del pore_radius_A
         del pore_radius_B
-os.system("rm hole2_output/*.old")
+os.system("rm hole2_output_%s/*.old"%(systemname))
 

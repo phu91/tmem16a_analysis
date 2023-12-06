@@ -11,35 +11,7 @@ sns.set_context("notebook")
 def plot_bendix(dataFrame,kind,background):
     if background=='dark':
         plt.style.use("dark_background")
-<<<<<<< HEAD
 
-    order=['0A0B','3A3B','3A1B','3A0B']
-    rep_list=['1','2']
-    ## MAKE BOX PLOT for AVERAGE
-    if kind=='box':
-        box_pairs = [((("0A0B","A"),("0A0B","B"))),
-                    ((("3A3B","A"),("3A3B","B"))),
-                    ((("3A1B","A"),("3A1B","B"))),
-                    ((("3A0B","A"),("3A0B","B"))),
-                    ]
-
-        g = sns.violinplot(data=data,
-                        x='SYSTEM',
-                        y='ANGLE',
-                        hue='CHAIN',
-                        split=True,
-                        order=order,
-                        palette='Set2',
-                        zorder=2
-                        )
-        g.set_ylabel("MAXIMUM BENDING ANGLE")
-
-        test_results = add_stat_annotation(g,data=data, x='SYSTEM', y='ANGLE',order=order,hue='CHAIN',
-                                        box_pairs=box_pairs,
-                                        test='Mann-Whitney', text_format='star',
-                                        loc='inside', verbose=2)
-=======
-    
     order=['0A0B','3A3B','3A1B','3A0B']
     ## MAKE BOX PLOT for AVERAGE
     if kind=='box':
@@ -66,7 +38,6 @@ def plot_bendix(dataFrame,kind,background):
         #                                    box_pairs=box_pairs,
         #                                    test='Mann-Whitney', text_format='star',
         #                                    loc='inside', verbose=2)
->>>>>>> 42ea1f6bf96f5c3b0dcc790f7d524f7f69868f55
         plt.suptitle("BOX_%s"%(ifile[:-4]),va='top')
     else:
         ### MAKE LINEPLOT FOR TIME

@@ -43,24 +43,12 @@ df = pd.DataFrame(matrix,columns=resid_list,index=resid_list)
 df_short = df
 fig,ax = plt.subplots(1,1)
 g = sns.heatmap(data=df_short,
-                # vmin=0,
-                # vmax=1,
+                vmin=0.5,   ## Cufoff at 0.6
+                vmax=1,
                 robust=True,
                 cmap='RdPu_r')
 g.set_xlabel("RESID")
 g.set_ylabel("RESID")
-
-# fig = px.imshow(matrix,x=resid_list,y=resid_list,text_auto=True)
-# fig.show()
-# g = ax.imshow(matrix)
-
-# ax.set_xticks(np.arange(0,1710))
-# ax.set_yticks(np.arange(0,1710))
-
-# ax.set_xticklabels(resid_list,rotation=45)
-# ax.set_yticklabels(resid_list,)
-# fig.colorbar(g)
-
 
 ### MISCELLANEOUS ###
 plt.locator_params(axis='y', nbins=30)
@@ -72,5 +60,5 @@ plt.rcParams['pdf.fonttype'] = 42
 plt.gcf().set_size_inches(7.5,6)   ## Wide x Height
 # plt.locator_params(axis='both', nbins=5)
 # plt.tight_layout()
-plt.savefig("KDE%s"%(ifile[:-3]))
+plt.savefig("CORR_%s"%(ifile[:-3]))
 plt.show()

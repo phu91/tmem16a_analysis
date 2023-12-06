@@ -18,42 +18,32 @@ ifile =  args.input
 
 data = pd.read_csv(ifile,comment='#',
                    delim_whitespace=True,
-                   names=['FRAME','CHAIN','RESIDUE','RESID','DIHEDRAL','ANGLE','SYSTEM'])
+                   names=['FRAME','CHAIN','RESIDUE','RESID','DIHEDRAL','ANGLE','SYSTEM','REP'])
 
-res_list=['425','879','884']
+res_list=['879','884']
 dihedral_list=['CHI1','CHI2']
-# fig,axes = plt.subplots(3,2,sharex=True,sharey=False,layout="constrained")
-# axes = axes.flatten()
-
-# for row in range(len(res_list)):
-#     for col in range(len(dihedral_list)):
-#         g = sns.scatterplot(data=data.query("RESID==%s & DIHEDRAL=='%s'"%(res_list[row],dihedral_list[col])),
-#                     x='FRAME',
-#                     y='ANGLE',
-#                     hue='CHAIN',
-#                     style='CHAIN',
-#                     ax=axes[row][col],
-#                     alpha=0.5,
-#                     lw=0,
-#                     )
-#         g.set_ylabel("%s RESID %s"%(dihedral_list[col],res_list[row]))
+chain_list=['A','B']
 
 #############################
-fig,axes = plt.subplots(1,3,sharex=True,sharey=False,layout="constrained")
-axes = axes.flatten()
+fig,axes = plt.subplots(2,2,sharex=True,sharey=False,layout="constrained")
+# axes = axes.flatten()
+data = data[(data["DIHEDRAL"] =='CHI1') | (data["DIHEDRAL"]=='CHI2')]
+print(data)
 
-for col in range(len(res_list)):
-    g = sns.scatterplot(data=data.query("RESID==%s"%(res_list[col])),
-                x='CHI1',
-                y='CHI2',
-                hue='CHAIN',
-                # style='CHAIN',
-                ax=axes[col],
-                alpha=0.5,
-                lw=0,
-                )
-# color_list = sns.color_palette('Set2')
-
+for row in range(len(chain_list)):
+    for col in range(len(res_list)):
+        g = sns.histplot(
+            data=data.query("RESID==%s and CHAIN=='%s'"%(res_list[col],chain_list[row])),
+            x="ANGLE",
+            hue="DIHEDRAL",
+            multiple="stack",
+            palette="light:m_r",
+            edgecolor=".3",
+            linewidth=.5,
+            ax=axes[row][col]
+            # log_scale=True,
+        )
+        g.set_title("RES %s | CHAIN %s"%(res_list[col],chain_list[row]))
 
 # ### MISCELLANEOUS ###
 plt.suptitle("%s"%(ifile[:-4]),va='top')
@@ -63,5 +53,5 @@ plt.rcParams['pdf.fonttype'] = 42
 plt.gcf().set_size_inches(7.5,6)   ## Wide x Height
 # plt.locator_params(axis='both', nbins=5)
 # plt.tight_layout()
-plt.savefig("KDE%s"%(ifile[:-3]))
+plt.savefig("STACKED_%s"%(ifile[:-3]))
 plt.show()

@@ -23,19 +23,18 @@ def pore_radius_calculations(selection_frame,chain,frame,center_of_pore):
                 random_seed=rnd.randrange(100000),
                 keep_files=True,
                 cpoint=center_of_pore,
+                end_radius=40,
                 cvect=[0,0,1])
 
-    # hole2.create_vmd_surface(filename='hole2_output/hole%i.vmd'%(ts.frame),
-    #                      sphpdb='hole2_output/hole%i.sph'%(ts.frame),
-    #                     #  sph_process='~/hole2/exe/sph_process',
-    #                   	  sos_triangle='~/hole2/exe/sos_triangle')
+    hole2.create_vmd_surface(filename=working_dir+'/hole_chain_%s_frame_%i.vmd'%(chain,frame),
+                         sphpdb=working_dir+'/hole_chain_%s_frame_%i.sph'%(chain,frame),
+                         sph_process='~/hole2/exe/sph_process',
+                      	  sos_triangle='~/hole2/exe/sos_triangle'
+                      	  )
 
-    # rxn_coords = profiles[0].rxn_coord
-    # pore_length = rxn_coords[-1] - rxn_coords[0]
-    os.remove(selection_frame)
     profiles_list = []
     with open(working_dir+'/hole_chain_%s_frame_%i.out'%(chain,frame),"r") as ifile:
-        patrn = "sampled"
+        patrn = "sampled|mid-"
         for line in ifile:
             if re.search(patrn,line):
                 line = line.split()
@@ -48,8 +47,9 @@ def pore_radius_per_frame(pore_center,frame,chain):
         os.makedirs("./hole2_output_%s"%(systemname),exist_ok=True)
     except OSError as error:
         print(error)
-
     working_dir ='hole2_output_%s'%(systemname)
+    os.system("chmod 777 %s"%(working_dir))
+
     if chain=='A':
         sel_frame = working_dir+"/tmpA_frame_%s.pdb"%(frame)
         sel = u.select_atoms("segid PROA").write(sel_frame)
@@ -92,7 +92,7 @@ cutoff = args.cutoff
 systemname = args.system
 
 u = mda.Universe(top_file,traj_file)
-os.system("rm hole2_output_%s/*.out"%(systemname))
+# os.system("rm hole2_output_%s/*.out"%(systemname))
 
 with open('PORE_PROFILE_%s.dat'%(systemname),'w+') as file_out:
     file_out.write("#frame chain z_coord radius\n")
@@ -112,5 +112,18 @@ with open('PORE_PROFILE_%s.dat'%(systemname),'w+') as file_out:
             file_out.flush()
         del pore_radius_A
         del pore_radius_B
-os.system("rm hole2_output_%s/*.old"%(systemname))
 
+        working_dir ='hole2_output_%s'%(systemname)
+        sel_frame_A_str = working_dir+"/tmpA_frame_%s.pdb"%(ts.frame)
+        sel_frame_B_str = working_dir+"/tmpB_frame_%s.pdb"%(ts.frame)
+        sel_frame_A_vmd_str = working_dir+'/hole_chain_A_frame_%i.vmd'%(ts.frame)
+        sel_frame_B_vmd_str = working_dir+'/hole_chain_B_frame_%i.vmd'%(ts.frame)
+        os.system("grep ATOM %s > tmp.pdb"%(sel_frame_A_str))
+        os.system("grep ATOM %s >> tmp.pdb"%(sel_frame_B_str))
+        os.system("mv tmp.pdb %s/frame_%s.pdb"%(working_dir,ts.frame))
+        os.system("sed 1,1d %s > tmp.vmd"%(sel_frame_A_vmd_str))
+        os.system("sed 1,1d %s >> tmp.vmd"%(sel_frame_B_vmd_str))
+        os.system("mv tmp.vmd %s/frame_%s.vmd"%(working_dir,ts.frame))
+        
+        os.system("rm hole2_output_%s/*.old"%(systemname))
+        os.system("rm %s %s %s %s"%(sel_frame_A_str,sel_frame_B_str,sel_frame_A_vmd_str,sel_frame_B_vmd_str))

@@ -5,7 +5,7 @@ import seaborn as sns
 import argparse
 from matplotlib import rc
 
-sns.set(style="ticks", context="talk")
+sns.set(style="ticks", context="notebook")
 # plt.style.use("dark_background")
 
 parser = argparse.ArgumentParser(description='Optional app description')
@@ -13,63 +13,54 @@ parser = argparse.ArgumentParser(description='Optional app description')
 parser.add_argument('--input', type=str, default='',
                     help='INPUT to Rg profile')
 
-parser.add_argument('--pore_def', type=str, default='',
-                    help='INPUT to PORE TOPOLOGY')
+parser.add_argument('--cutoff', type=int, default='30',
+                    help='Cutoff distance from the pore region to search for Cl-. Default 30 (A)')
 args = parser.parse_args()
 
 ifile =  args.input
-pore_def = args.pore_def
+cutoff = args.cutoff
 
 data = pd.read_csv(ifile,comment='#',
-                   delim_whitespace=True,
-                   names=['frame','Index','Found@Chain','Z','Distance'])
+delim_whitespace=True,
+names=['FRAME','INDEX','CHAIN','ZPOS','POSITION_PORE','DCOM_PORE'])
+data['ns']=data.FRAME*0.2
 
-data['ns'] = data['frame']*0.01
+### DEFINE PORE TOPOLOGY
+PORE = data[['POSITION_PORE','ZPOS']]
+Inner_Vestibule=PORE.loc[PORE.POSITION_PORE=="Inner_Vestibule"]
+Ca_Binding=PORE.loc[PORE.POSITION_PORE=="Ca_Binding"]
+Neck=PORE.loc[PORE.POSITION_PORE=="Neck"]
+Outer_Vestibule=PORE.loc[PORE.POSITION_PORE=="Outer_Vestibule"]
+Out_of_Zone=PORE.loc[PORE.POSITION_PORE=="Out_of_Zone"]
 
-pore_top = pd.read_csv(pore_def,
-                  comment='#',
-                  delim_whitespace=True,
-                  names=['f','ca_min','ca_max','inner_min','inner_max','neck_min','neck_max','outer_min','outer_max'])
-
-pore_top_avg = pore_top.mean().drop(['f'])
-
-point_color = sns.cubehelix_palette(10,start=.5, rot=20, as_cmap=True)
+# print(Outer_Vestibule.min()[1])
+pore_topology_color = sns.color_palette('Accent')
+pore_topology_label = ['Inner Vestibule','Ca2+ Binding','Neck','Outer Vestibule']
+pore_topology_name = [Inner_Vestibule,Ca_Binding,Neck,Outer_Vestibule]
 
 
-sns.scatterplot(data=data.query("Distance <30"), 
+for i,j,k in zip(pore_topology_name,pore_topology_label,pore_topology_color):
+    plt.fill_between(data.query("DCOM_PORE<=%s"%(cutoff)).ns,i.min()[1],i.max()[1],alpha=1,color=k,label=j)
+sns.scatterplot(data=data.query("DCOM_PORE<=%s"%(cutoff)), 
             x="ns", 
-            y="Z", 
-            hue="Index",
-            style="Found@Chain",
+            y="ZPOS", 
+            hue="INDEX",
+            style="CHAIN",
             alpha=0.7,
+            markers=True,
             legend='auto',
-            palette=point_color,
+            palette='bright',
+            linewidth=0.5,
             )
-
-pore_cutoff = list(pore_top_avg.values)
-# print(a)
-pore_label = ["Ca2+ Binding","Inner Vestibule","Neck","Outer Vestibule"]
-color_pore = sns.color_palette('Set2')
-
-offset = np.linspace(0,10,5)
-# print(offset)
-for i,c in zip(np.arange(len(pore_label)),color_pore):
-    plt.plot((offset[i],offset[i]),
-             (pore_cutoff[2*i],pore_cutoff[2*i+1]),
-             color=c,
-             lw=10,
-             label=pore_label[i],
-             )
-
-
-# ### MISCELLANEOUS ###
-plt.ylim([-30,30])
+plt.xlabel("Time (ns)")
+# # ### MISCELLANEOUS ###
+# plt.ylim([-30,30])
 plt.rcParams['ps.useafm'] = True
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 plt.rcParams['pdf.fonttype'] = 42
-plt.gcf().set_size_inches(10,7.5)
-plt.locator_params(axis='y', nbins=6)
+plt.gcf().set_size_inches(7.5,5.5)
+# plt.locator_params(axis='y', nbins=6)
 plt.legend(loc='upper left',bbox_to_anchor=(1.01, 1),borderaxespad=0)
 plt.tight_layout()
-plt.savefig("%s"%(ifile[:-3]))
+# plt.savefig("%s"%(ifile[:-3]))
 plt.show()

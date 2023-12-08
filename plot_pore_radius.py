@@ -11,15 +11,15 @@ import scipy.stats
 
 def histogram_radius(bins,chain,left_limit,right_limit):
     selected_range = np.linspace(left_limit,right_limit,num=bins+1)
-    check_file = os.path.isfile("HISTOGRAM_CHAIN_%s_%s.dat"%(chain,ifile[:-4]))
-    if check_file is False or RW == 'YES':
+    # check_file = os.path.isfile("HISTOGRAM_CHAIN_%s_%s.dat"%(chain,ifile[:-4]))
+    if RW=='Yes':
         with open("HISTOGRAM_CHAIN_%s_%s.dat"%(chain,ifile[:-4]),'w+') as ofile:
             for i in range(bins):
                 # for j in data.loc[data.CHAIN=='%s'%(chain)].iterrows():
                 #     # print(j[1][3])
                 #     if selected_range[i]<=j[1][2]<selected_range[i+1]:
-                radius = data.loc[(data.CHAIN=='%s'%(chain)) & (data.ZPOS<=selected_range[i+1]) & (data.ZPOS>=selected_range[i])]
-                group_frame = radius.RADII.values
+                radii = data.loc[(data.CHAIN=='%s'%(chain)) & (data.ZPOS<=selected_range[i+1]) & (data.ZPOS>=selected_range[i])]
+                group_frame = radii.RADII.values
                 group_mean=np.mean(group_frame)
                 group_standard_dev = np.std(group_frame)
                 group_zpos = (selected_range[i]+selected_range[i+1])/2
@@ -50,13 +50,21 @@ offset=args.offset
 numberOfbins=args.bins
 
 RW = RW.capitalize()
+# print(RW)
 ######################
 data = pd.read_csv(ifile,
 delim_whitespace=True,
 comment='#',
 names=['FRAME','CHAIN','ZPOS','RADII'])
 
-os.system("grep COM %s | awk '{print $3,$4,$5}'> COM_%s"%(ifile,ifile))
+# check_file = os.path.isfile("COM_%s"%(ifile))
+# print(check_file)
+if RW=='Yes':
+    print("\n===> Rewriting Data: %s\n"%(RW))
+    os.system("grep COM %s | awk '{print $3,$4,$5}'> COM_%s"%(ifile,ifile))
+else:
+    print("\n===> Rewriting Data: %s\n"%(RW))
+
 
 com_df = pd.read_csv("COM_%s"%(ifile),
 delimiter=' ',
@@ -80,15 +88,19 @@ chain_a = histogram_radius(bins=nbin,chain='A',left_limit=left_bound_a,right_lim
 chain_b = histogram_radius(bins=nbin,chain='B',left_limit=left_bound_b,right_limit=right_bound_b)
 # print(chain_a)
 fig,axes = plt.subplots(1,2,sharey=True)
-axes[0].plot(chain_a.ZPOS,chain_a.RADII,color='blue',marker='o',label='')
-axes[0].fill_between(chain_a.ZPOS, chain_a.RADII-chain_a.STD, chain_a.RADII+chain_a.STD, alpha=.25, linewidth=0)
-axes[1].plot(chain_b.ZPOS,chain_b.RADII,color='orange',marker='s',label='')
-axes[1].fill_between(chain_b.ZPOS, chain_b.RADII-chain_b.STD, chain_b.RADII+chain_b.STD, alpha=.25, linewidth=0)
+axes[0].plot(chain_a.ZPOS,chain_a.RADII,color='Tab:blue',marker='o',label='')
+axes[0].fill_between(chain_a.ZPOS, chain_a.RADII-chain_a.STD, chain_a.RADII+chain_a.STD, alpha=.25, linewidth=0,color='Tab:blue')
+axes[1].plot(chain_b.ZPOS,chain_b.RADII,color='Tab:orange',marker='s',label='')
+axes[1].fill_between(chain_b.ZPOS, chain_b.RADII-chain_b.STD, chain_b.RADII+chain_b.STD, alpha=.25, linewidth=0,color='Tab:orange')
 
-axes[0].axvline(x=com_a_average,linestyle='-.',color='black',label='COM of PORE')
-axes[0].axhline(y=1.81,linestyle='-.',color='red',label='Chloride radii')
-axes[1].axvline(x=com_b_average,linestyle='-.',color='black',label='COM of PORE')
-axes[1].axhline(y=1.81,linestyle='--',color='red',label='Chloride radii')
+axes[0].axvline(x=com_a_average,linestyle=':',color='black',label='ZCOM of PORE')
+axes[0].axhline(y=1.81,linestyle='-.',color='red',label='Chloride radius')
+axes[0].axhline(y=3.2,linestyle='--',color='blue',label='Hydrated Chloride radius')
+
+axes[1].axvline(x=com_b_average,linestyle=':',color='black',label='ZCOM of PORE')
+axes[1].axhline(y=1.81,linestyle='-.',color='red',label='Chloride radius')
+axes[1].axhline(y=3.2,linestyle='--',color='blue',label='Hydrated Chloride radius')
+
 
 axes[0].set_xlim([com_a_average-1,com_a_average+1])
 axes[1].set_xlim([com_b_average-1,com_b_average+1])
@@ -96,16 +108,22 @@ axes[1].set_xlim([com_b_average-1,com_b_average+1])
 axes[0].set_title("Chain A")
 axes[1].set_title("Chain B")
 
-plt.ylim([0,10])
+axes[0].set_xlabel("Z Coordinate")
+axes[0].set_ylabel("Pore Radius (A)")
+axes[0].set_ylim([0,5])
+
+axes[1].set_xlabel("Z Coordinate")
+axes[1].set_ylabel("Pore Radius (A)")
+axes[1].set_ylim([0,5])
 # # # ### MISCELLANEOUS ###
 plt.legend()
-plt.suptitle("%s"%(ifile[:-3]),va='top')
+plt.suptitle("%s"%(ifile[:-4]),va='top')
 plt.rcParams['ps.useafm'] = True
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 plt.rcParams['pdf.fonttype'] = 42
 # plt.gcf().set_size_inches(25,3)   ## Wide x Height
 # plt.locator_params(axis='both', nbins=5)
 plt.tight_layout()
-# plt.savefig("KDE%s"%(ifile[:-3]))
+plt.savefig("%s.png"%(ifile[:-4]))
 plt.show()
 

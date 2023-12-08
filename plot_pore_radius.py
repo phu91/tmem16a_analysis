@@ -9,34 +9,47 @@ import scipy.stats
 ###############
 # FUNCTIONS
 
-def histogram_radius(bins,chain):
-    selected_range = np.linspace(left_bound_a,right_bound_a,num=bins,endpoint=True)
-    with open("PORE_PROFILE_HISTOGRAM_CHAIN_%s_%s.dat"%(chain,ifile[:-4]),'w+') as ofile:
-        for i in range(bins-1):
-            in_range=[]
-            # for j in data.loc[data.CHAIN=='%s'%(chain)].iterrows():
-            #     # print(j[1][3])
-            #     if selected_range[i]<=j[1][2]<selected_range[i+1]:
-            radius = data.loc[(data.CHAIN=='%s'%(chain)) & (data.ZPOS<=selected_range[i+1]) & (data.ZPOS>=selected_range[i])]
-            print(radius.RADII)
-    #         in_range.append(j[1][3])
-    #         zpos_mid = (selected_range[i]+selected_range[i+1])/2
-    #         ofile.write("%s\t%s\t%s\n"%(zpos_mid,np.mean(in_range),np.std(in_range)))
-    #         ofile.flush()
-    #         # ofile.write("%s %s %s\n"%((selected_range[i]+selected_range[i+1])/2,np.mean(in_range),np.std(in_range)))
-    # plot_data = pd.read_csv("PORE_PROFILE_HISTOGRAM_CHAIN_%s_%s.dat"%(chain,ifile[:-4]),delim_whitespace=True,names=['ZPOS','RADII','STD'])
-    # plot_data['CHAIN']=chain
-    # os.system("rm %s"%("PORE_PROFILE_HISTOGRAM_CHAIN_%s_%s.dat"%(chain,ifile[:-4])))
-    # return plot_data
+def histogram_radius(bins,chain,left_limit,right_limit):
+    selected_range = np.linspace(left_limit,right_limit,num=bins+1)
+    check_file = os.path.isfile("HISTOGRAM_CHAIN_%s_%s.dat"%(chain,ifile[:-4]))
+    if check_file is False or RW == 'YES':
+        with open("HISTOGRAM_CHAIN_%s_%s.dat"%(chain,ifile[:-4]),'w+') as ofile:
+            for i in range(bins):
+                # for j in data.loc[data.CHAIN=='%s'%(chain)].iterrows():
+                #     # print(j[1][3])
+                #     if selected_range[i]<=j[1][2]<selected_range[i+1]:
+                radius = data.loc[(data.CHAIN=='%s'%(chain)) & (data.ZPOS<=selected_range[i+1]) & (data.ZPOS>=selected_range[i])]
+                group_frame = radius.RADII.values
+                group_mean=np.mean(group_frame)
+                group_standard_dev = np.std(group_frame)
+                group_zpos = (selected_range[i]+selected_range[i+1])/2
+                # print(group_zpos,group_mean,group_standard_dev)
+                ofile.write("%s\t%s\t%s\n"%(group_zpos,group_mean,group_standard_dev))
+                ofile.flush()
+
+    plot_data = pd.read_csv("HISTOGRAM_CHAIN_%s_%s.dat"%(chain,ifile[:-4]),delim_whitespace=True,names=['ZPOS','RADII','STD'])
+    plot_data['CHAIN']=chain
+    #os.system("rm %s"%("PORE_PROFILE_HISTOGRAM_CHAIN_%s_%s.dat"%(chain,ifile[:-4])))
+    # print(plot_data)
+    return plot_data
 ###############
 parser = argparse.ArgumentParser(description='Optional app description')
 
 parser.add_argument('--input', type=str, default='',
                     help='INPUT FILE REP 1')
-
+parser.add_argument('--rw', type=str, default='NO',
+                    help='Rewrite data yes/no?. Default is no')
+parser.add_argument('--offset', type=int, default='2',
+                    help='Offset from COM of PORE')
+parser.add_argument('--bins', type=int, default='50',
+                    help='Number of Bins. Default 50')
 args = parser.parse_args()
 ifile =  args.input
+RW = args.rw
+offset=args.offset
+numberOfbins=args.bins
 
+RW = RW.capitalize()
 ######################
 data = pd.read_csv(ifile,
 delim_whitespace=True,
@@ -53,7 +66,8 @@ com_average_df = com_df.groupby('CHAIN').mean()
 # print(com_average_df)
 com_a_average = com_average_df.ZCOM[0]
 com_b_average = com_average_df.ZCOM[1]
-offset = 3
+# print(com_a_average)
+offset = offset
 
 right_bound_a = com_a_average+offset
 left_bound_a = com_a_average-offset
@@ -61,71 +75,29 @@ right_bound_b = com_b_average+offset
 left_bound_b = com_b_average-offset
 
 #### HISTOGRAM
-nbin=5
-chain_a = histogram_radius(bins=nbin,chain='A')
-chain_b = histogram_radius(bins=nbin,chain='B')
+nbin=numberOfbins
+chain_a = histogram_radius(bins=nbin,chain='A',left_limit=left_bound_a,right_limit=right_bound_a)
+chain_b = histogram_radius(bins=nbin,chain='B',left_limit=left_bound_b,right_limit=right_bound_b)
+# print(chain_a)
+fig,axes = plt.subplots(1,2,sharey=True)
+axes[0].plot(chain_a.ZPOS,chain_a.RADII,color='blue',marker='o',label='')
+axes[0].fill_between(chain_a.ZPOS, chain_a.RADII-chain_a.STD, chain_a.RADII+chain_a.STD, alpha=.25, linewidth=0)
+axes[1].plot(chain_b.ZPOS,chain_b.RADII,color='orange',marker='s',label='')
+axes[1].fill_between(chain_b.ZPOS, chain_b.RADII-chain_b.STD, chain_b.RADII+chain_b.STD, alpha=.25, linewidth=0)
 
-data_2 = pd.concat([chain_a,chain_b])
-# print(data_2)
+axes[0].axvline(x=com_a_average,linestyle='-.',color='black',label='COM of PORE')
+axes[0].axhline(y=1.81,linestyle='-.',color='red',label='Chloride radii')
+axes[1].axvline(x=com_b_average,linestyle='-.',color='black',label='COM of PORE')
+axes[1].axhline(y=1.81,linestyle='--',color='red',label='Chloride radii')
 
-# plt.scatter(chain_a.ZPOS,chain_a.RADII,'o')
-# plt.scatter(chain_b.ZPOS,chain_b.RADII,'s')
-plt.errorbar(chain_a.ZPOS,chain_a.RADII,chain_a.STD)
-plt.errorbar(chain_b.ZPOS,chain_b.RADII,chain_b.STD)
+axes[0].set_xlim([com_a_average-1,com_a_average+1])
+axes[1].set_xlim([com_b_average-1,com_b_average+1])
 
-plt.axvline(x=com_a_average,linestyle='-.',color='blue',label='COM of PORE A')
-plt.axvline(x=com_b_average,linestyle='-.',color='orange',label='COM of PORE B')
-plt.axhline(y=1.81,linestyle='--',color='black',label='Chloride radii')
+axes[0].set_title("Chain A")
+axes[1].set_title("Chain B")
 
-# fig, axes = plt.subplots(1,2,sharex=True,sharey=True)
-
-# n_open_a  = len(data.loc[(data.CHAIN=='A') & (data.ZPOS<=right_bound_a) & (data.ZPOS>=left_bound_a) & (data.RADII>1.81)].groupby(['FRAME']).mean())
-# n_close_a = len(data.loc[(data.CHAIN=='A') & (data.ZPOS<=right_bound_a) & (data.ZPOS>=left_bound_a) & (data.RADII<1.81)].groupby(['FRAME']).mean())
-# print(n_open_a)
-# n_open_b  = len(data.loc[(data.CHAIN=='B') & (data.ZPOS<=right_bound_b) & (data.ZPOS>=left_bound_b) & (data.RADII>1.81)].groupby(['FRAME']).mean())
-# n_close_b = len(data.loc[(data.CHAIN=='B') & (data.ZPOS<=right_bound_b) & (data.ZPOS>=left_bound_b) & (data.RADII<1.81)].groupby(['FRAME']).mean())
-# print(n_open_b)
-
-# sns.histplot(data=data.query("CHAIN=='A' & RADII <5"),
-# # x='ZPOS',
-# x='RADII',
-# bins=50,
-# ax=axes[0])
-# sns.histplot(data=data.query("CHAIN=='B' & RADII <5"),
-# # x='ZPOS',
-# x='RADII',
-# bins=50,
-# ax=axes[1])
-
-
-# g1 = sns.scatterplot(data=data.query("CHAIN=='A' & RADII <3"),
-# x='ZPOS',
-# y='RADII',
-# hue='FRAME',
-# marker='o',
-# legend=False,
-# estimator=np.mean,
-# n_boot=10,
-# ax=axes[0])
-# g1.set_xlim([com_a_average-3,com_a_average+3])
-# g1.set_ylim([0,5])
-# g1.axvline(x=com_a_average,linestyle='--',color='b')
-# g1.axhline(y=1.81,linestyle='--',color='orange')
-
-# g2 = sns.scatterplot(data=data.query("CHAIN=='B' & RADII <3"),
-# x='ZPOS',
-# y='RADII',
-# hue='FRAME',
-# estimator=np.mean,
-# marker='s',
-# ax=axes[1])
-# g2.set_xlim([com_b_average-3,com_b_average+3])
-# g2.set_ylim([0,5])
-# g2.axvline(x=com_b_average,linestyle='-.',color='b',label='COM of PORE')
-# g2.axhline(y=1.81,linestyle='--',color='orange',label='Chloride radii')
-
-
-# # ### MISCELLANEOUS ###
+plt.ylim([0,10])
+# # # ### MISCELLANEOUS ###
 plt.legend()
 plt.suptitle("%s"%(ifile[:-3]),va='top')
 plt.rcParams['ps.useafm'] = True

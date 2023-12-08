@@ -13,8 +13,8 @@ parser = argparse.ArgumentParser(description='Optional app description')
 parser.add_argument('--input', type=str, default='',
                     help='INPUT to Rg profile')
 
-parser.add_argument('--cutoff', type=int, default='30',
-                    help='Cutoff distance from the pore region to search for Cl-. Default 30 (A)')
+parser.add_argument('--cutoff', type=int, default='50',
+                    help='Cutoff distance from the pore region to search for Cl-. Default 50 (A)')
 args = parser.parse_args()
 
 ifile =  args.input
@@ -55,6 +55,7 @@ sns.scatterplot(data=data.query("DCOM_PORE<=%s"%(cutoff)),
 plt.xlabel("Time (ns)")
 # # ### MISCELLANEOUS ###
 # plt.ylim([-30,30])
+plt.suptitle("%s"%(ifile[:-4]),va='top')
 plt.rcParams['ps.useafm'] = True
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 plt.rcParams['pdf.fonttype'] = 42
@@ -62,5 +63,5 @@ plt.gcf().set_size_inches(7.5,5.5)
 # plt.locator_params(axis='y', nbins=6)
 plt.legend(loc='upper left',bbox_to_anchor=(1.01, 1),borderaxespad=0)
 plt.tight_layout()
-# plt.savefig("%s"%(ifile[:-3]))
+plt.savefig("%s.png"%(ifile[:-4]))
 plt.show()

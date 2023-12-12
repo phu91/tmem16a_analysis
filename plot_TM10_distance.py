@@ -13,6 +13,7 @@ sns.set_context('notebook')
 def pivot_data(cutoff,chain):
     # print(data)
     cutoff_data = data.loc[data.DISTANCE<=cutoff]
+    # cutoff_data = data
     u = cutoff_data.groupby(['FRAME','RESNAME_10','RESID_10','CHAIN_10'])
     tm10_define = np.arange(887,928)
     other_chain= np.arange(73,928)
@@ -26,7 +27,7 @@ def pivot_data(cutoff,chain):
     # print(u_mean)
     resname_10_list = u_mean.RESNAME_10
     resname_list = u_mean.RESNAME
-    u_mean_pivot = u_mean.pivot_table(index='RESID_10',columns='RESID',values='DISTANCE',fill_value=10)
+    u_mean_pivot = u_mean.pivot_table(index='RESID_10',columns='RESID',values='DISTANCE',fill_value=cutoff+100)
     # print(u_mean_pivot)
     del u, shorten_data_10
     return resname_10_list,resname_list,u_mean_pivot
@@ -106,6 +107,6 @@ plt.gcf().set_size_inches(7.5,10)   ## Wide x Height
 # plt.locator_params(axis='y', nbins=89)
 
 plt.tight_layout()
-plt.savefig("%s"%(ifile))
-# plt.show()
+# plt.savefig("%s"%(ifile))
+plt.show()
 

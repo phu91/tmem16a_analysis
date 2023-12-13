@@ -86,7 +86,8 @@ left_bound_b = com_b_average-offset
 nbin=numberOfbins
 chain_a = histogram_radius(bins=nbin,chain='A',left_limit=left_bound_a,right_limit=right_bound_a)
 chain_b = histogram_radius(bins=nbin,chain='B',left_limit=left_bound_b,right_limit=right_bound_b)
-# print(chain_a)
+# print(chain_a.ZPOS)
+
 fig,axes = plt.subplots(1,2,sharey=True)
 axes[0].plot(chain_a.ZPOS,chain_a.RADII,color='Tab:blue',marker='o',label='')
 axes[0].fill_between(chain_a.ZPOS, chain_a.RADII-chain_a.STD, chain_a.RADII+chain_a.STD, alpha=.25, linewidth=0,color='Tab:blue')
@@ -102,8 +103,8 @@ axes[1].axhline(y=1.81,linestyle='-.',color='red',label='Chloride radius')
 axes[1].axhline(y=3.2,linestyle='--',color='blue',label='Hydrated Chloride radius')
 
 
-axes[0].set_xlim([com_a_average-1,com_a_average+1])
-axes[1].set_xlim([com_b_average-1,com_b_average+1])
+# axes[0].set_xlim([com_a_average-1,com_a_average+1])
+# axes[1].set_xlim([com_b_average-1,com_b_average+1])
 
 axes[0].set_title("Chain A")
 axes[1].set_title("Chain B")
@@ -124,6 +125,6 @@ plt.rcParams['pdf.fonttype'] = 42
 # plt.gcf().set_size_inches(25,3)   ## Wide x Height
 # plt.locator_params(axis='both', nbins=5)
 plt.tight_layout()
-plt.savefig("%s.png"%(ifile[:-4]))
+# plt.savefig("%s.png"%(ifile[:-4]))
 plt.show()
 

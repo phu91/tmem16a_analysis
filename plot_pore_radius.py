@@ -88,43 +88,67 @@ chain_a = histogram_radius(bins=nbin,chain='A',left_limit=left_bound_a,right_lim
 chain_b = histogram_radius(bins=nbin,chain='B',left_limit=left_bound_b,right_limit=right_bound_b)
 # print(chain_a.ZPOS)
 
-fig,axes = plt.subplots(1,2,sharey=True)
-axes[0].plot(chain_a.ZPOS,chain_a.RADII,color='Tab:blue',marker='o',label='')
-axes[0].fill_between(chain_a.ZPOS, chain_a.RADII-chain_a.STD, chain_a.RADII+chain_a.STD, alpha=.25, linewidth=0,color='Tab:blue')
-axes[1].plot(chain_b.ZPOS,chain_b.RADII,color='Tab:orange',marker='s',label='')
-axes[1].fill_between(chain_b.ZPOS, chain_b.RADII-chain_b.STD, chain_b.RADII+chain_b.STD, alpha=.25, linewidth=0,color='Tab:orange')
+# Initialize the grid
+grid = plt.GridSpec(2, 2, wspace=0.4, hspace=0.2)
+# make subplots
+g1 = plt.subplot(grid[0, 0])
+g2 = plt.subplot(grid[0, 1])
+g3 = plt.subplot(grid[1, :2])
 
-axes[0].axvline(x=com_a_average,linestyle=':',color='black',label='ZCOM of PORE')
-axes[0].axhline(y=1.81,linestyle='-.',color='red',label='Chloride radius')
-axes[0].axhline(y=3.2,linestyle='--',color='blue',label='Hydrated Chloride radius')
+# fig,axes = plt.subplots(1,2,sharey=True)
+color_a='violet'
+color_b='deepskyblue'
+alpha=0.25
 
-axes[1].axvline(x=com_b_average,linestyle=':',color='black',label='ZCOM of PORE')
-axes[1].axhline(y=1.81,linestyle='-.',color='red',label='Chloride radius')
-axes[1].axhline(y=3.2,linestyle='--',color='blue',label='Hydrated Chloride radius')
+g1.plot(chain_a.ZPOS,chain_a.RADII,color=color_a,marker='o',label='')
+g1.fill_between(chain_a.ZPOS, chain_a.RADII-chain_a.STD, chain_a.RADII+chain_a.STD, alpha=alpha, linewidth=0,color=color_a)
+g2.plot(chain_b.ZPOS,chain_b.RADII,color=color_b,marker='s',label='')
+g2.fill_between(chain_b.ZPOS, chain_b.RADII-chain_b.STD, chain_b.RADII+chain_b.STD, alpha=alpha, linewidth=0,color=color_b)
 
+g3.plot(chain_b.ZPOS,chain_b.RADII,color=color_b,marker='s',label='')
+g3.fill_between(chain_b.ZPOS, chain_b.RADII-chain_b.STD, chain_b.RADII+chain_b.STD, alpha=alpha, linewidth=0,color=color_b)
+g3.plot(chain_a.ZPOS,chain_a.RADII,color=color_a,marker='o',label='')
+g3.fill_between(chain_a.ZPOS, chain_a.RADII-chain_a.STD, chain_a.RADII+chain_a.STD, alpha=alpha, linewidth=0,color=color_a)
 
-# axes[0].set_xlim([com_a_average-1,com_a_average+1])
-# axes[1].set_xlim([com_b_average-1,com_b_average+1])
+g1.axvline(x=com_a_average,linestyle=':',color='black',label='ZCOM of PORE')
+g1.axhline(y=1.81,linestyle='-.',color='coral',label='Chloride radius')
+g1.axhline(y=3.2,linestyle='--',color='blue',label='Hydrated Chloride radius')
 
-axes[0].set_title("Chain A")
-axes[1].set_title("Chain B")
+g2.axvline(x=com_b_average,linestyle=':',color='grey',label='ZCOM of PORE')
+g2.axhline(y=1.81,linestyle='-.',color='coral',label='Chloride radius')
+g2.axhline(y=3.2,linestyle='--',color='blue',label='Hydrated Chloride radius')
 
-axes[0].set_xlabel("Z Coordinate")
-axes[0].set_ylabel("Pore Radius (A)")
-axes[0].set_ylim([0,5])
+g3.axvline(x=com_a_average,linestyle=':',color='black',label='ZCOM of PORE A')
+g3.axvline(x=com_b_average,linestyle=':',color='gray',label='ZCOM of PORE B')
+g3.axhline(y=1.81,linestyle='-.',color='coral',label='Chloride radius')
+g3.axhline(y=3.2,linestyle='--',color='blue',label='Hydrated Chloride radius')
 
-axes[1].set_xlabel("Z Coordinate")
-axes[1].set_ylabel("Pore Radius (A)")
-axes[1].set_ylim([0,5])
+g1.set_xlim([com_a_average-3,com_a_average+3])
+g2.set_xlim([com_b_average-3,com_b_average+3])
+
+g1.set_title("Chain A")
+g2.set_title("Chain B")
+
+g1.set_xlabel("Z Coordinate")
+g1.set_ylabel("Pore Radius (A)")
+g1.set_ylim([0,5])
+
+g2.set_xlabel("Z Coordinate")
+g2.set_ylabel("Pore Radius (A)")
+g2.set_ylim([0,5])
+
+g3.set_xlabel("Z Coordinate")
+g3.set_ylabel("Pore Radius (A)")
+
 # # # ### MISCELLANEOUS ###
 plt.legend()
 plt.suptitle("%s"%(ifile[:-4]),va='top')
 plt.rcParams['ps.useafm'] = True
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 plt.rcParams['pdf.fonttype'] = 42
-# plt.gcf().set_size_inches(25,3)   ## Wide x Height
+plt.gcf().set_size_inches(7.5,6.5)   ## Wide x Height
 # plt.locator_params(axis='both', nbins=5)
-plt.tight_layout()
-# plt.savefig("%s.png"%(ifile[:-4]))
-plt.show()
+# plt.tight_layout()
+plt.savefig("%s.png"%(ifile[:-4]))
+# plt.show()
 

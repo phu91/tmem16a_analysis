@@ -145,6 +145,6 @@ plt.gcf().set_size_inches(7.5,10)   ## Wide x Height
 # plt.locator_params(axis='y', nbins=89)
 # plt.legend()
 plt.tight_layout()
-# # plt.savefig("%s"%(ifile))
-plt.show()
+plt.savefig("%s"%(ifile))
+# plt.show()
 

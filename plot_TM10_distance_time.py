@@ -63,10 +63,10 @@ parser = argparse.ArgumentParser(description='Optional app description')
 
 parser.add_argument('--input', type=str, default='',
                     help='INPUT FILE')
-parser.add_argument('--cutoff', type=int, default='5',
-                    help='Cutoff value to define BENDING. Default: 5 A')
-parser.add_argument('--skip', type=int, default='1',
-                    help='Skip Frames')
+parser.add_argument('--cutoff', type=int, default='10',
+                    help='Cutoff value between two Centers of Mass. Default 10 (A)')
+parser.add_argument('--skip', type=int, default='0',
+                    help='[0,Read data fully],[1,Read skipped data],[skip>1,READ NORMAL DATA and GENERATE SKIPPED DATA]')
 parser.add_argument('--rw', type=str, default='no',
                     help='Rewrite Data. Default: no')
 args = parser.parse_args()
@@ -85,56 +85,69 @@ if RW=='yes':
     names=['FRAME','RESNAME_10','RESID_10','CHAIN_10','RESNAME','RESID','CHAIN','DISTANCE'],
     # chunksize=10000
     )
-    frames = len(data.drop_duplicates(['FRAME']))
-    print("===> TOTAL FRAMES: %s\n"%(frames))
-    skip=skip
-    skip_period = np.arange(0,frames,skip,dtype='int')
-    print("===> USED FRAMES: %s\n"%(skip_period))
-    data = data[data['FRAME'].isin(skip_period)]
-    # print("===> NEW DATAFRAME: %s\n"%(frames))
-    
+
     data['RESIDUE']=data['RESNAME']+data['RESID'].astype('str')
     data['RESIDUE_10']=data['RESNAME_10']+data['RESID_10'].astype('str')
-    data[['FRAME','RESIDUE_10','RESIDUE','DISTANCE']]
+    data=data[['FRAME','RESIDUE_10','CHAIN_10','RESIDUE','DISTANCE']]
+    data= data.round({"DISTANCE":2})
     data.to_csv("SHORTED_%s"%(ifile))
-else:
-    data = pd.read_csv("SHORTED_%s"%(ifile))
 
-u_a = data.loc[(data.CHAIN_10=='A')]
-u_a.loc[(data.DISTANCE>=cutoff),'DISTANCE']=cutoff
+else:
+    print("===> Used OLD data!!\n")
+    if skip==0:  # Read data fully
+        data = pd.read_csv("SHORTED_%s"%(ifile))
+    elif skip==1: # Read skipped data
+        data=pd.read_csv("SHORTED_SKIPPED_%s"%(ifile))
+    elif skip>1: #Read data fully and generate skipped data
+        data = pd.read_csv("SHORTED_%s"%(ifile))
+        frames = len(data.drop_duplicates(['FRAME']))
+        print("===> TOTAL FRAMES: %s\n"%(frames))
+        skip_period = np.arange(0,frames,skip,dtype='int')
+        print("===> USED FRAMES: %s\n"%(skip_period))
+        data = data[data['FRAME'].isin(skip_period)]
+        data.to_csv("SHORTED_SKIPPED_%s"%(ifile))
+        with open("SHORTED_SKIPPED_%s"%(ifile),'a') as file:
+            file.write("#SKIPPED %s\n"%(skip))
+            file.write("#CUT-OFF %s\n"%(cutoff))
+
+u_a = data.loc[(data.CHAIN_10=='B')]
 u_a1 = u_a.groupby(['FRAME','RESIDUE']).mean().reset_index()
-# print(u_a1.loc[u_a1.FRAME==1])
-u_a2 = pd.pivot_table(u_a1,index='RESIDUE',columns='FRAME',values='DISTANCE')
+u_a1['CONTACT']=0
+u_a1.loc[(u_a1.DISTANCE<=cutoff),'CONTACT']=1
+u_a1.loc[(u_a1.DISTANCE>cutoff),'CONTACT']=0
+u_a2 = pd.pivot_table(u_a1,index='RESIDUE',columns='FRAME',values='CONTACT')
+
 u_b = data.loc[(data.CHAIN_10=='B')]
-u_b.loc[(data.DISTANCE>=cutoff),'DISTANCE']=cutoff
 u_b1 = u_b.groupby(['FRAME','RESIDUE']).mean().reset_index()
-u_b2 = pd.pivot_table(u_b1,index='RESIDUE',columns='FRAME',values='DISTANCE')
-fig,axes  = plt.subplots(2,1,sharey=True,sharex=True)
-cmap='magma_r'
-g1 = sns.heatmap(data=u_a2,
-cmap=cmap,
-vmin=0,
-vmax=cutoff,
-ax=axes[0],
-# xticklabels=True, 
-# yticklabels=True,
-cbar_kws=({'label':"Distance (A)"})
-)
-g1.set_title("TM 10 Chain A | Cut-off: %s (A)"%(cutoff))
-g2 = sns.heatmap(data=u_b2,
-cmap=cmap,
-vmin=0,
-vmax=cutoff,
-ax=axes[1],
-# xticklabels=True, 
-# yticklabels=True,
-cbar_kws=({'label':"Distance (A)"})
-)
-g2.set_title("TM 10 Chain B | Cut-off: %s (A)"%(cutoff))
+u_b1['CONTACT']=0
+u_b1.loc[(u_b1.DISTANCE<=cutoff),'CONTACT']=1
+u_b1.loc[(u_b1.DISTANCE>cutoff),'CONTACT']=0
+u_b2 = pd.pivot_table(u_b1,index='RESIDUE',columns='FRAME',values='CONTACT')
+
+fig,axes  = plt.subplots(1,2,sharey=True,sharex=False)
+cmap='RdPu'
+data_list =[u_a2,u_b2]
+chain_list=['A','B']
+for ind,ax in enumerate(axes):
+    g1 = sns.heatmap(data=data_list[ind],
+    cmap=cmap,
+    # vmin=0,
+    # vmax=1,
+    # robust=True,
+    ax=ax,
+    # xticklabels=True, 
+    # yticklabels=True,
+    # cbar_kws=({'label':"Distance (A)"})
+    cbar=False
+    )
+    g1.set_title("TM 10 Chain %s | Cut-off: %s (A)"%(chain_list[ind],cutoff))
+    ax.yaxis.set_tick_params(labelsize=8)
+
+    # g1.set_yticklabels(g1.get_yticks(), size = 5)
 
 # # # # ######################
 # # # ##### MISCELLANEOUS ###
-plt.xticks(rotation=72)
+# plt.yticks(fontsize=5)
 # plt.ylim([0,1.1])
 # plt.title("%s |ss%s (A)"%(ifile[:-3],cutoff),va='top')
 plt.suptitle("%s"%(ifile),va='top')

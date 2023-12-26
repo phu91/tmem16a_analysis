@@ -4,60 +4,51 @@ import pandas as pd
 import seaborn as sns 
 import argparse
 from matplotlib import rc
-from statannot import add_stat_annotation
+from matplotlib.ticker import MaxNLocator, AutoMinorLocator
+import matplotlib.ticker as ticker  
 
 sns.set_context('notebook')
 ###############
 # FUNCTIONS
 
-def pivot_data(cutoff,chain):
-    # print(data)
-    cutoff_data = data.loc[data.DISTANCE<=cutoff]
-    # print(cutoff_data)
-    # cutoff_data = data
-    u = cutoff_data.groupby(['FRAME','RESNAME_10','RESID_10','CHAIN_10'])
-    tm10_define = np.arange(887,928)
-    other_chain= np.arange(73,928)
-    # print(len(tm10_define),len(other_chain))
+def pivot_data(chain):
+    chain_sel = data.loc[(data.CHAIN_10=='%s'%(chain))]
+    del chain_sel['Unnamed: 0']
 
-    shorten_data_10 = cutoff_data.loc[cutoff_data.CHAIN_10=='%s'%(chain)]
-    u = shorten_data_10.groupby(['RESNAME_10','RESID_10','RESNAME','RESID','CHAIN'])
-    u_mean = u.mean()
-    del u_mean['FRAME']
-    u_mean = u_mean.reset_index()
-    # print(u_mean)
-    resname_10_list = u_mean.RESNAME_10
-    resname_list = u_mean.RESNAME
-    u_mean_pivot = u_mean.pivot_table(index='RESID_10',columns='RESID',values='DISTANCE',fill_value=cutoff+100)
-    # print(u_mean_pivot)
-    del u, shorten_data_10
-    return resname_10_list,resname_list,u_mean_pivot
+    chain_sel['CONTACTS_WITH_TM10']=0
+    chain_sel.loc[(chain_sel.DISTANCE<=cutoff),'CONTACTS_WITH_TM10']=1
+    chain_sel.loc[(chain_sel.DISTANCE>cutoff),'CONTACTS_WITH_TM10']=0
+    # print(chain_sel.loc[chain_sel.CONTACTS_WITH_TM10==1])
 
-def test(cutoff,chain):
-    cutoff_data = data.loc[(data.DISTANCE<=cutoff) & (data.CHAIN==chain)]
-    cutoff_data['CONTACTS']=1
-    del cutoff_data['FRAME']
-    # print(cutoff_data)
-    u = cutoff_data.groupby(['RESNAME_10','RESID_10','CHAIN_10'])
-    tm10_define = np.arange(887,928)
-    other_chain= np.arange(73,928)
-    # print(len(tm10_define),len(other_chain))
+    chain_sel_groupbyFrame = chain_sel.groupby(['FRAME','RESIDUE'],sort=False).sum().reset_index()
+    del chain_sel_groupbyFrame['DISTANCE']
+    chain_sel_groupbyFrame_vmax=chain_sel_groupbyFrame.CONTACTS_WITH_TM10.max()
+    # print(chain_sel_groupbyFrame)
+    chain_sel_groupbyFrame['FRAME'].astype('int8')
+    chain_sel_groupbyFrame['CONTACTS_WITH_TM10'].astype('int8')
+    chain_sel_pivot = pd.pivot_table(chain_sel_groupbyFrame,index='RESIDUE',columns='FRAME',values='CONTACTS_WITH_TM10',sort=False,aggfunc='mean')
+    return chain_sel_pivot,chain_sel_groupbyFrame_vmax
 
-    shorten_data_10 = cutoff_data
-    u = shorten_data_10.groupby(['RESNAME_10','RESID_10','TM'])
-    u2 = u.sum().reset_index()
-    del u2['RESID']
-    del u2['DISTANCE']
-    u3 = u.mean().reset_index()
-    del u3['RESID']
-    del u3['CONTACTS']
-    # print(u2)
-    # print(u3)
-    new_data = u2.merge(u3)
+def skipping(DATA):
+    print("===> SKIP: %s\n"%(skip))
+    if skip>1:
+        frames = len(DATA.drop_duplicates(['FRAME']))
+        skip_period = np.arange(0,frames,skip,dtype='int')
+        DATA = DATA[DATA['FRAME'].isin(skip_period)]
+        DATA.to_csv("SHORTED_SKIPPED_%s_%s"%(skip,ifile))
+        nameout = "SHORTED_SKIPPED_%s_%s"%(skip,ifile)
+        print("===> TOTAL FRAMES: %s\n"%(frames))
+        print("===> USED FRAMES: %s\n"%(skip_period))
+        print("===> NEW INPUT: %s"%(nameout))
 
-    return new_data
+        with open("SHORTED_SKIPPED_%s_%s"%(skip,ifile),'a') as file:
+            file.write("#SKIPPED %s\n"%(skip))
+            file.write("#CUT-OFF %s\n"%(cutoff))
+        DATA=pd.read_csv("SHORTED_SKIPPED_%s_%s"%(skip,ifile))
+    elif skip ==1:
+        DATA=DATA
+    return DATA
 
-    # return u2
 ###############
 parser = argparse.ArgumentParser(description='Optional app description')
 
@@ -91,72 +82,54 @@ if RW=='yes':
     data=data[['FRAME','RESIDUE_10','CHAIN_10','RESIDUE','DISTANCE']]
     data= data.round({"DISTANCE":2})
     data.to_csv("SHORTED_%s"%(ifile))
-
+    del data
+    data = pd.read_csv("SHORTED_%s"%(ifile))
+    data = skipping(data)
 else:
     print("===> Used OLD data!!\n")
-    if skip==0:  # Read data fully
-        data = pd.read_csv("SHORTED_%s"%(ifile))
-    elif skip==1: # Read skipped data
-        data=pd.read_csv("SHORTED_SKIPPED_%s"%(ifile))
-    elif skip>1: #Read data fully and generate skipped data
-        data = pd.read_csv("SHORTED_%s"%(ifile))
-        frames = len(data.drop_duplicates(['FRAME']))
-        print("===> TOTAL FRAMES: %s\n"%(frames))
-        skip_period = np.arange(0,frames,skip,dtype='int')
-        print("===> USED FRAMES: %s\n"%(skip_period))
-        data = data[data['FRAME'].isin(skip_period)]
-        data.to_csv("SHORTED_SKIPPED_%s"%(ifile))
-        with open("SHORTED_SKIPPED_%s"%(ifile),'a') as file:
-            file.write("#SKIPPED %s\n"%(skip))
-            file.write("#CUT-OFF %s\n"%(cutoff))
+    data = pd.read_csv("SHORTED_%s"%(ifile))
+    data = skipping(data)
 
-u_a = data.loc[(data.CHAIN_10=='B')]
-u_a1 = u_a.groupby(['FRAME','RESIDUE']).mean().reset_index()
-u_a1['CONTACT']=0
-u_a1.loc[(u_a1.DISTANCE<=cutoff),'CONTACT']=1
-u_a1.loc[(u_a1.DISTANCE>cutoff),'CONTACT']=0
-u_a2 = pd.pivot_table(u_a1,index='RESIDUE',columns='FRAME',values='CONTACT')
 
-u_b = data.loc[(data.CHAIN_10=='B')]
-u_b1 = u_b.groupby(['FRAME','RESIDUE']).mean().reset_index()
-u_b1['CONTACT']=0
-u_b1.loc[(u_b1.DISTANCE<=cutoff),'CONTACT']=1
-u_b1.loc[(u_b1.DISTANCE>cutoff),'CONTACT']=0
-u_b2 = pd.pivot_table(u_b1,index='RESIDUE',columns='FRAME',values='CONTACT')
+chaina,vmaxa = pivot_data(chain='A')
+chainb,vmaxb = pivot_data(chain='B')
 
-fig,axes  = plt.subplots(1,2,sharey=True,sharex=False)
-cmap='RdPu'
-data_list =[u_a2,u_b2]
+fig,axes  = plt.subplots(1,2,sharey=False,sharex=True)
+cmap='plasma'
+data_list =[chaina,chainb]
 chain_list=['A','B']
+
+if vmaxa>vmaxb:
+    vmax=vmaxa
+else:
+    vmax=vmaxb
+
 for ind,ax in enumerate(axes):
     g1 = sns.heatmap(data=data_list[ind],
     cmap=cmap,
-    # vmin=0,
-    # vmax=1,
-    # robust=True,
+    vmin=0,
+    vmax=vmax,
     ax=ax,
     # xticklabels=True, 
     # yticklabels=True,
-    # cbar_kws=({'label':"Distance (A)"})
-    cbar=False
+    cbar_kws=({'label':"Number of Contacts",'ticks':np.arange(0, vmax+1)})
     )
-    g1.set_title("TM 10 Chain %s | Cut-off: %s (A)"%(chain_list[ind],cutoff))
-    ax.yaxis.set_tick_params(labelsize=8)
+    g1.set_title("Chain %s | Cut-off: %s (A)"%(chain_list[ind],cutoff))
+    ax.yaxis.set_tick_params(labelsize=8,)
+    ax.yaxis.set_minor_locator(AutoMinorLocator())
 
-    # g1.set_yticklabels(g1.get_yticks(), size = 5)
-
-# # # # ######################
-# # # ##### MISCELLANEOUS ###
-# plt.yticks(fontsize=5)
-# plt.ylim([0,1.1])
+# # # # # ######################
+# # # # ##### MISCELLANEOUS ###
+# # plt.yticks(fontsize=5)
+# # plt.ylim([0,1.1])
 # plt.title("%s |ss%s (A)"%(ifile[:-3],cutoff),va='top')
 plt.suptitle("%s"%(ifile),va='top')
 plt.rcParams['ps.useafm'] = True
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 plt.rcParams['pdf.fonttype'] = 42
-plt.gcf().set_size_inches(7.5,10)   ## Wide x Height
-# plt.locator_params(axis='y', nbins=89)
-# plt.legend()
+plt.gcf().set_size_inches(7.5*2,3.5*2)   ## Wide x Height
+# # plt.legend()
+
 plt.tight_layout()
 plt.savefig("%s"%(ifile))
 # plt.show()

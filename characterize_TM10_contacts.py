@@ -7,18 +7,85 @@ from MDAnalysis.analysis import align, distances
 from MDAnalysis.coordinates.memory import MemoryReader
 from tqdm import tqdm
 import pandas as pd
-def distance_per_residue(selection_tm10,selection_helix):
+
+def where_is_this_residue(RESID):
+    RESID=int(RESID)
+    ## Define Helix
+    N_term = np.arange(0,327)
+    helix_01_range = np.arange(327,361)
+    helix_02_range = np.arange(399,440)
+    helix_03_range = np.arange(478,519)
+    helix_04_range = np.arange(534,563)
+    helix_05_range = np.arange(572,599)
+    helix_06_range = np.arange(630,667)
+    helix_07_range = np.arange(692,714)
+    helix_08_range = np.arange(718,741)
+    helix_09_range = np.arange(753,781)
+    helix_10_range = np.arange(887,928)
+
+    # print(helix_01_range)
+
+    ## Define Loop
+    loop_1_2_range  = np.arange(361,399)
+    loop_2_3_range  = np.arange(440,478)
+    loop_3_4_range  = np.arange(519,534)
+    loop_4_5_range  = np.arange(563,572)
+    loop_5_6_range  = np.arange(599,630)
+    loop_6_7_range  = np.arange(667,692)
+    loop_7_8_range  = np.arange(714,718)
+    loop_8_9_range  = np.arange(741,753)
+    loop_9_10_range = np.arange(781,887)
+    PART_NAME='UNK'
+    if RESID in helix_01_range:
+        PART_NAME='TM1'
+    elif RESID in helix_02_range:
+        PART_NAME='TM2'
+    elif RESID in helix_03_range:
+        PART_NAME='TM3'
+    elif RESID in helix_04_range:
+        PART_NAME='TM4'
+    elif RESID in helix_05_range:
+        PART_NAME='TM5'
+    elif RESID in helix_06_range:
+        PART_NAME='TM6'
+    elif RESID in helix_07_range:
+        PART_NAME='TM7'
+    elif RESID in helix_08_range:
+        PART_NAME='TM8'
+    elif RESID in helix_09_range:
+        PART_NAME='TM9'
+    elif RESID in helix_10_range:
+        PART_NAME='TM10'
+    elif RESID in loop_1_2_range:
+        PART_NAME='L12'
+    elif RESID in loop_2_3_range:
+        PART_NAME='L23'
+    elif RESID in loop_3_4_range:
+        PART_NAME='L34'
+    elif RESID in loop_4_5_range:
+        PART_NAME='L45'
+    elif RESID in loop_5_6_range:
+        PART_NAME='L56'
+    elif RESID in loop_6_7_range:
+        PART_NAME='L67'
+    elif RESID in loop_7_8_range:
+        PART_NAME='L78'
+    elif RESID in loop_8_9_range:
+        PART_NAME='L89'
+    elif RESID in loop_9_10_range:
+        PART_NAME='L910'
+    elif RESID in N_term:
+        PART_NAME='Nterm'
+    return PART_NAME
+
+def distance_per_residue(currentFrame,selection_tm10,chain_tm10,selection_helix):
+
     selection_tm10_positions = selection_tm10.positions
     selection_tm10_atoms = selection_tm10.atoms
 
     selection_helix_positions = selection_helix.positions
     selection_helix_atoms = selection_helix.atoms
-    
-    # selection_helix_positions = u.select_atoms(selection_helix).positions
-    # print(selection_tm10_residue,selection_tm10_positions)
-    # for i in selection_tm10_residues:
-    #     for j,k in zip(selection_tm10_atoms,selection_tm10_positions):
-    #         print(i,j,k)
+
     selection_tm10_label=[]
     for resn,resi in zip(selection_tm10_atoms.resnames,selection_tm10_atoms.resids):
         selection_tm10_label.append((resn+str(resi)))
@@ -26,19 +93,33 @@ def distance_per_residue(selection_tm10,selection_helix):
     selection_helix_label=[]
     for resn,resi in zip(selection_helix_atoms.resnames,selection_helix_atoms.resids):
         selection_helix_label.append((resn+str(resi)))
-
     # print(selection_helix_label)
+
+    ## Calculate distance between tm10 and every atoms on the other chain
     dist_arr = distances.distance_array(selection_helix_positions,
                                         selection_tm10_positions,
                                     box=u.dimensions)
     # print(len(selection_tm10_atoms),len(selection_helix_atoms),np.shape(dist_arr))
+
+    ## Add labels for TM10 and selected helix
     distance_df = pd.DataFrame(dist_arr,columns=selection_tm10_label)
-    distance_df['TM10']=selection_helix_label
-    # small.to_csv('tmp.csv')
-    distance_df=distance_df.T.reset_index().groupby(['index'],sort=False).min()
-    distance_df2 = distance_df.T.groupby(['TM10'],sort=False).min()
-    # small2.insert(0, "frame", frame)
-    return distance_df2
+    distance_df['OTHER']=selection_helix_label
+    distance_df_melt = distance_df.melt(['OTHER'])
+    distance_df_melt=distance_df_melt.rename(columns={'variable': "TM10",'value': "DISTANCE"})
+    # distance_df_melt_group = distance_df_melt.groupby(['TM10'],sort=False).min()
+    # print(distance_df_melt_group)
+    ## Select only the cutoff distance, find the smallest distance among the atoms of each residue on OTHER CHAIN
+    cut_off_df = distance_df_melt.loc[distance_df_melt.DISTANCE<=cutoff]
+    distance_df_melt_cutoff = cut_off_df.groupby(['OTHER'],sort=False).min().round(2)
+    distance_df_melt_cutoff['FRAME']=currentFrame
+    distance_df_melt_cutoff=distance_df_melt_cutoff.reset_index()
+    OTHER_resid = distance_df_melt_cutoff['OTHER'].str[3:]
+    # print(OTHER_resid)
+    OTHER_PART = OTHER_resid.map(lambda x: where_is_this_residue(x))
+    distance_df_melt_cutoff['OTHER_PART']=OTHER_PART
+    distance_df_melt_cutoff['TM10_CHAIN']=chain_tm10
+    distance_df_melt_cutoff=distance_df_melt_cutoff[['FRAME','TM10_CHAIN','TM10','OTHER','OTHER_PART','DISTANCE']]
+    return distance_df_melt_cutoff
 
 # Instantiate the parser
 parser = argparse.ArgumentParser(description='Optional app description')
@@ -77,43 +158,16 @@ helix_10b = u.select_atoms('segid PROB and resid 887 to 927 and not name H*',upd
 chaina = u.select_atoms("segid PROA and not name H*",updating=True)
 chainb = u.select_atoms("segid PROB and not name H*",updating=True)
 
-## Define Helix
-# helix_01 = 327 to 360
-# helix_02 = 399 to 439
-# helix_03 = 478 to 518
-# helix_04 = 534 to 562
-# helix_05 = 572 to 598
-# helix_06 = 630 to 666
-# helix_07 = 692 to 713
-# helix_08 = 718 to 740
-# helix_09 = 753 to 780
-# helix_10 = 887 to 927
-
-# loop_1_2  = 361 to 398
-# loop_2_3  = 
-# loop_3_4  = 
-# loop_4_5  = 
-# loop_5_6  = 
-# loop_6_7  = 
-# loop_7_8  = 
-# loop_8_9  = 
-# loop_9_10 = 
-
 with open ("DISTANCE_TM10_PROFILE_%s"%(systemname),'w+') as ofile:
+    ofile.write("FRAME TM10_CHAIN TM10 OTHER OTHER_PART DISTANCE\n")
+    collect=[]
     for ts in u.trajectory[::traj_skip]:
-        distance_profile_a = distance_per_residue(helix_10a,chainb)
-        distance_profile_a.insert(0,'FRAME',ts.frame)
-        print("FRAME %s"%(ts.frame))
-        # print(distance_profile_a)
-        distance_profile_a.to_csv("DISTANCE_TM10_PROFILE_%s"%(systemname),mode="a",index=True,header=True)
+        distance_profile_a = distance_per_residue(ts.frame,helix_10a,"A",chainb)
+        distance_profile_b = distance_per_residue(ts.frame,helix_10b,"B",chaina)
+        collect.append((distance_profile_a.values.tolist()))
+        collect.append((distance_profile_b.values.tolist()))
 
-        # distance_profile_b = distance_per_residue(helix_10b,chaina)
-        # # print(len(distance_profile_a),len(distance_profile_b))
-        # distance_profile_a=np.array(distance_profile_a)
-        # distance_profile_b=np.array(distance_profile_b)
-        # for x in tqdm(distance_profile_a,desc='Writing chain A Frame %s'%(ts.frame)):
-        #     ofile.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"%(ts.frame,x[0],x[1],x[2],x[3],x[4],x[5],x[6]))        
-        #     ofile.flush()
-        # for x in tqdm(distance_profile_b,desc='Writing chain B Frame %s'%(ts.frame)):
-        #     ofile.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"%(ts.frame,x[0],x[1],x[2],x[3],x[4],x[5],x[6]))        
-        #     ofile.flush()
+    for i in collect:
+        for j in i:
+            ofile.write("%s\t%s\t%s\t%s\t%s\t%s\n"%(j[0],j[1],j[2],j[3],j[4],j[5]))
+            ofile.flush()

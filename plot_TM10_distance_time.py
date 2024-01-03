@@ -6,6 +6,7 @@ import argparse
 from matplotlib import rc
 from matplotlib.ticker import MaxNLocator, AutoMinorLocator
 import matplotlib.ticker as ticker  
+import colorcet as cc
 
 sns.set_context('notebook')
 ###############
@@ -60,34 +61,52 @@ if RW=='yes':
     )
 
     data['NUMBER OF CONTACTS']=1
+    print(data)
     u = data.groupby(['FRAME','TM10_CHAIN','OTHER_PART']).sum().reset_index()
-    # print(u.sum())
+    print(u)
+    u['Time (ns)']=u['FRAME']*2/10
     fig,axes = plt.subplots(2,1,sharex=True,sharey=True)
     chain_list=['A','B']
+    palette = sns.color_palette(cc.glasbey_hv, n_colors=20)
+    
     for ind,ax in enumerate(axes):
         g = sns.lineplot(data=u.query("TM10_CHAIN=='%s'"%(chain_list[ind])),
-        x='FRAME',
+        x='Time (ns)',
         y='NUMBER OF CONTACTS',
         # style='TM10_CHAIN',
         hue='OTHER_PART',
+        hue_order=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM8','TM9','TM10','L12','L23','L34','L45','L56','L67','L78','L89','L910','Nterm'],
         # markers=True,
+        palette=palette,
+        lw=3,
+        alpha=0.95,
         ax=ax
         )
         g.set_title("TM10 CHAIN %s"%(chain_list[ind]))
+        ax.tick_params(axis='both', labelsize='large',)
 
-# # # # # # ######################
-# # # # # ##### MISCELLANEOUS ###
-# # plt.yticks(fontsize=5)
-# # plt.ylim([0,1.1])
-# plt.title("%s |ss%s (A)"%(ifile[:-3],cutoff),va='top')
-plt.suptitle("%s"%(ifile),va='top')
+    axes[0].get_legend().remove()
+    legend=axes[1].legend(loc="lower center",
+    bbox_to_anchor=(.5, -0.3), 
+    ncol=10, 
+    title=None, 
+    frameon=False,
+    )
+    for line in legend.get_lines():
+        line.set_linewidth(0)
+        line.set_marker('s')
+        line.set_markersize(15)
+    for text in legend.get_texts():
+        text.set_fontweight("bold")
+
+##### MISCELLANEOUS ###
+plt.suptitle("%s"%(ifile),va='top',weight='bold')
 plt.rcParams['ps.useafm'] = True
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'weight':'bold'})
 plt.rcParams['pdf.fonttype'] = 42
-SCALE=2
-plt.gcf().set_size_inches(7.5*SCALE,5.5*SCALE)   ## Wide x Height
-# # # plt.legend()
+SCALE=1.5
+plt.gcf().set_size_inches(7.5*SCALE,7.5*SCALE)   ## Wide x Height
 plt.tight_layout()
-# plt.savefig("%s"%(ifile))
+plt.savefig("%s"%(ifile))
 plt.show()
 

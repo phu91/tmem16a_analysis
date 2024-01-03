@@ -77,7 +77,27 @@ helix_10b = u.select_atoms('segid PROB and resid 887 to 927 and not name H*',upd
 chaina = u.select_atoms("segid PROA and not name H*",updating=True)
 chainb = u.select_atoms("segid PROB and not name H*",updating=True)
 
-# print(helix_10a.atoms)
+## Define Helix
+# helix_01 = 327 to 360
+# helix_02 = 399 to 439
+# helix_03 = 478 to 518
+# helix_04 = 534 to 562
+# helix_05 = 572 to 598
+# helix_06 = 630 to 666
+# helix_07 = 692 to 713
+# helix_08 = 718 to 740
+# helix_09 = 753 to 780
+# helix_10 = 887 to 927
+
+# loop_1_2  = 361 to 398
+# loop_2_3  = 
+# loop_3_4  = 
+# loop_4_5  = 
+# loop_5_6  = 
+# loop_6_7  = 
+# loop_7_8  = 
+# loop_8_9  = 
+# loop_9_10 = 
 
 with open ("DISTANCE_TM10_PROFILE_%s"%(systemname),'w+') as ofile:
     for ts in u.trajectory[::traj_skip]:

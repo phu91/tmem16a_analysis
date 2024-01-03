@@ -34,36 +34,12 @@ def distance_per_residue(selection_tm10,selection_helix):
     # print(len(selection_tm10_atoms),len(selection_helix_atoms),np.shape(dist_arr))
     distance_df = pd.DataFrame(dist_arr,columns=selection_tm10_label)
     distance_df['TM10']=selection_helix_label
-    small=distance_df
-    small.to_csv('tmp.csv')
-    small=small.T.reset_index().groupby(['index'],sort=False).min()
-    print(small.T.groupby(['TM10'],sort=False).min())
-    # melt_tm10_label = []
-    # for i in selection_helix_label:
-    #     for j in selection_tm10_label:
-    #         melt_tm10_label.append(j)
-    # dm['tm10']=melt_tm10_label
-    # print(dm.min())
-    # print(dm.groupby(['variable'],sort=False).min())
-    # dm.to_csv("tmp")
-    # print(dm.loc[dm.value<=5].groupby(['variable'],sort=False).min())
-    # print(distance_df.min(axis='columns'))
-    # distance_df.columns=list(selection_helix_label)
+    # small.to_csv('tmp.csv')
+    distance_df=distance_df.T.reset_index().groupby(['index'],sort=False).min()
+    distance_df2 = distance_df.T.groupby(['TM10'],sort=False).min()
+    # small2.insert(0, "frame", frame)
+    return distance_df2
 
-    # distance_pivot = pd.pivot_table(distance_df,index=selection_tm10_label,columns=selection_helix_label)
-    # print(distance_pivot)
-    
-    # distance_collect=[]
-    # for ix,x in enumerate(selection_tm10.residues):
-    #     for iy,y in enumerate(selection_helix.residues):
-    #         # if dist_arr[ix,iy]<=cutoff:
-    #         if x.segid=='PROA':
-    #             distance_collect.append((x.resname,x.resid,'A',y.resname,y.resid,'B',dist_arr[ix,iy]))
-    #         else:
-    #             distance_collect.append((x.resname,x.resid,'B',y.resname,y.resid,'A',dist_arr[ix,iy]))
-    #         # else:
-    #         #     distance_collect.append(('0'))
-    # return distance_collect
 # Instantiate the parser
 parser = argparse.ArgumentParser(description='Optional app description')
 # Required positional argument
@@ -104,9 +80,13 @@ chainb = u.select_atoms("segid PROB and not name H*",updating=True)
 # print(helix_10a.atoms)
 
 with open ("DISTANCE_TM10_PROFILE_%s"%(systemname),'w+') as ofile:
-    ofile.write("#frame resname1 resid1 chain1 resname2 resid2 chain2 distance\n")
     for ts in u.trajectory[::traj_skip]:
         distance_profile_a = distance_per_residue(helix_10a,chainb)
+        distance_profile_a.insert(0,'FRAME',ts.frame)
+        print("FRAME %s"%(ts.frame))
+        # print(distance_profile_a)
+        distance_profile_a.to_csv("DISTANCE_TM10_PROFILE_%s"%(systemname),mode="a",index=True,header=True)
+
         # distance_profile_b = distance_per_residue(helix_10b,chaina)
         # # print(len(distance_profile_a),len(distance_profile_b))
         # distance_profile_a=np.array(distance_profile_a)

@@ -54,88 +54,40 @@ RW = args.rw
 if RW=='yes':
     print("\n===> Data are overwritten!!\n")
     data = pd.read_csv(ifile,
-    # delim_whitespace=True,
+    delim_whitespace=True,
     comment='#',
     header=0,
-    # index_col=0,
-    # names=['FRAME','RESNAME_10','RESID_10','CHAIN_10','RESNAME','RESID','CHAIN','DISTANCE'],
-    # chunksize=10000
     )
-    data = data[data["FRAME"].str.contains("FRAME") == False]
-    # print(data)
-    data3=data.rename(columns={'TM10': "RESIDUE"})
-    # # print(data3)
-    data3_melted=data3.melt(["RESIDUE","FRAME"]).rename(columns={'variable':"TM10",'value':"DISTANCE"})
-    data3_melted['DISTANCE'] = pd.to_numeric(data3_melted['DISTANCE'])
-    # print(data3_melted)
-    # plot_data=data3_melted.loc[data3_melted['DISTANCE']<=cutoff]
-    # print(plot_data.RESIDUE.str[3:])
-    # u=plot_data.sort_values(by='RESIDUE', key=lambda x: x.str[3:])
-    # print(plot_data)
-    # print(u.sort_values(['FRAME']))
-    data3_melted['COUNT']=0
-    data3_melted.loc[data3_melted['DISTANCE']<=cutoff,'COUNT']=1
-    selected=data3_melted.loc[data3_melted.COUNT==1]
-    selected=selected[['RESIDUE','FRAME','COUNT']]
-    print(selected)
-    print(selected.groupby(['RESIDUE','FRAME'],sort=False).sum())
-    # selected=data3_melted.loc[data3_melted['DISTANCE']<=cutoff].sort_values(['FRAME'])
-    # print(selected.value_counts().reset_index().rename(columns={0:"COUNT"}).sort_values(['FRAME']))
 
-#     data['RESIDUE']=data['RESNAME']+data['RESID'].astype('str')
-#     data['RESIDUE_10']=data['RESNAME_10']+data['RESID_10'].astype('str')
-#     data=data[['FRAME','RESIDUE_10','CHAIN_10','RESIDUE','DISTANCE']]
-#     data= data.round({"DISTANCE":2})
-#     data.to_csv("SHORTED_%s"%(ifile))
-#     del data
-#     data = pd.read_csv("SHORTED_%s"%(ifile))
-#     data = skipping(data)
-# else:
-#     print("===> Used OLD data!!\n")
-#     data = pd.read_csv("SHORTED_%s"%(ifile))
-#     data = skipping(data)
-
-
-# chaina,vmaxa = pivot_data(chain='A')
-# chainb,vmaxb = pivot_data(chain='B')
-
-# fig,axes  = plt.subplots(1,2,sharey=False,sharex=True)
-# cmap='plasma'
-# data_list =[chaina,chainb]
-# chain_list=['A','B']
-
-# if vmaxa>vmaxb:
-#     vmax=vmaxa
-# else:
-#     vmax=vmaxb
-
-# for ind,ax in enumerate(axes):
-#     g1 = sns.heatmap(data=data_list[ind],
-#     cmap=cmap,
-#     vmin=0,
-#     vmax=vmax,
-#     ax=ax,
-#     # xticklabels=True, 
-#     # yticklabels=True,
-#     cbar_kws=({'label':"Number of Contacts",'ticks':np.arange(0, vmax+1)})
-#     )
-#     g1.set_title("Chain %s | Cut-off: %s (A)"%(chain_list[ind],cutoff))
-#     ax.yaxis.set_tick_params(labelsize=8,)
-#     ax.yaxis.set_minor_locator(AutoMinorLocator())
+    data['NUMBER OF CONTACTS']=1
+    u = data.groupby(['FRAME','TM10_CHAIN','OTHER_PART']).sum().reset_index()
+    # print(u.sum())
+    fig,axes = plt.subplots(2,1,sharex=True,sharey=True)
+    chain_list=['A','B']
+    for ind,ax in enumerate(axes):
+        g = sns.lineplot(data=u.query("TM10_CHAIN=='%s'"%(chain_list[ind])),
+        x='FRAME',
+        y='NUMBER OF CONTACTS',
+        # style='TM10_CHAIN',
+        hue='OTHER_PART',
+        # markers=True,
+        ax=ax
+        )
+        g.set_title("TM10 CHAIN %s"%(chain_list[ind]))
 
 # # # # # # ######################
 # # # # # ##### MISCELLANEOUS ###
-# # # plt.yticks(fontsize=5)
-# # # plt.ylim([0,1.1])
-# # plt.title("%s |ss%s (A)"%(ifile[:-3],cutoff),va='top')
-# plt.suptitle("%s"%(ifile),va='top')
-# plt.rcParams['ps.useafm'] = True
-# rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-# plt.rcParams['pdf.fonttype'] = 42
-# plt.gcf().set_size_inches(7.5*2,3.5*2)   ## Wide x Height
+# # plt.yticks(fontsize=5)
+# # plt.ylim([0,1.1])
+# plt.title("%s |ss%s (A)"%(ifile[:-3],cutoff),va='top')
+plt.suptitle("%s"%(ifile),va='top')
+plt.rcParams['ps.useafm'] = True
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+plt.rcParams['pdf.fonttype'] = 42
+SCALE=2
+plt.gcf().set_size_inches(7.5*SCALE,5.5*SCALE)   ## Wide x Height
 # # # plt.legend()
-
-# plt.tight_layout()
+plt.tight_layout()
 # plt.savefig("%s"%(ifile))
-# # plt.show()
+plt.show()
 

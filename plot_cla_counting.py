@@ -5,7 +5,7 @@ import seaborn as sns
 import argparse
 from matplotlib import rc
 
-sns.set(style="ticks", context="notebook")
+sns.set(style="ticks", context="talk")
 # plt.style.use("dark_background")
 
 parser = argparse.ArgumentParser(description='Optional app description')
@@ -26,56 +26,81 @@ names=['FRAME','INDEX','CHAIN','ZPOS','POSITION_PORE','DCOM_PORE'])
 data['ns']=data.FRAME*0.2
 data['COUNT']=1
 data_count = data.groupby(['INDEX','CHAIN','POSITION_PORE']).sum().reset_index()
-data_count2 = data_count[['INDEX','CHAIN','POSITION_PORE','COUNT']].query("POSITION_PORE !='Out_of_Zone'")
-# print(data_count2)
-# g = sns.catplot(data=data_count,
-# x='POSITION_PORE',
-# y='COUNT',
-# hue='CHAIN',
-# )
+data_count2 = data_count[['INDEX','CHAIN','POSITION_PORE','COUNT']].query("POSITION_PORE=='Inner_Vestibule' or POSITION_PORE=='Ca_Binding'")
+data_count2['RETENTION']=data_count2['COUNT']*0.2
 
-barWidth = 0.25
-fig = plt.subplots(figsize =(12, 8)) 
+fig, axes = plt.subplots(2,1,sharey=True,sharex=True)
+chain_list=['A','B']
+color_list=['hot','cool']
+chain_count=len(data_count2.CHAIN.unique())
+if chain_count==1:
+    if data_count2.CHAIN.unique()=='A':
+        dummy_df =  {'INDEX':['None','None'],
+            'CHAIN':'B', 
+            'POSITION_PORE': ['Ca_Binding','Inner_Vestibule'],
+            'COUNT': [0,0],
+            'RETENTION':[0,0]}
+        data_count2 = pd.concat([data_count2, pd.DataFrame(dummy_df)], ignore_index = True)
+    else:
+        dummy_df =  {'INDEX':['None','None'],
+            'CHAIN':'A', 
+            'POSITION_PORE': ['Ca_Binding','Inner_Vestibule'],
+            'COUNT': [0,0],
+            'RETENTION':[0,0]}
+        data_count2 = pd.concat([data_count2, pd.DataFrame(dummy_df)], ignore_index = True)
 
-species = ("Ca2+ Binding", "Inner Vestibule", "Neck")
-# set height of bar 
-A = data_count.loc[data_count.CHAIN=='A'].COUNT.tolist()
-B = data_count.loc[data_count.CHAIN=='B'].COUNT.tolist()
- 
-# Set position of bar on X axis 
-br1 = np.arange(len(species)) 
-br1a = [x + barWidth for x in br1] 
-br2 = np.arange(len(species)) 
-br2a = [x + barWidth for x in br2] 
-# Make the plot
-plt.bar(br1a, A, color ='r', width = barWidth, 
-        edgecolor ='grey', label ='IT') 
-plt.bar(br2a, B, color ='g', width = barWidth, 
-        edgecolor ='grey', label ='ECE') 
+# Draw a nested barplot by species and sex
+for ind,ax in enumerate(axes):
+    g = sns.barplot(
+        data=data_count2.query("CHAIN=='%s'"%(chain_list[ind])), 
+        x="POSITION_PORE", 
+        y="RETENTION", hue="INDEX",
+        palette="%s"%(color_list[ind]),        # alpha=.6,
+        ax=ax
+    )
+    g.set_title("PORE CHAIN %s"%(chain_list[ind]),weight='bold')
+    g.set_xlabel("")
+    g.set_ylabel("Retention Time (ns)",weight='bold')
+    g.set_ylabel(g.get_ylabel(),weight='bold')
+    g.set_xticklabels(["Ca²⁺ Binding","Inner Vestibule"], minor=False,weight='bold')
+    g.set_ylim([0,800])
 
-# Adding Xticks 
-# plt.xlabel('Branch', fontweight ='bold', fontsize = 15) 
-# plt.ylabel('Students passed', fontweight ='bold', fontsize = 15) 
-# plt.xticks([r + barWidth for r in range(len(IT))], 
-#         ['2015', '2016', '2017', '2018', '2019'])
+    legend=ax.legend(loc="upper right",
+    # bbox_to_anchor=(.5, -0.8), 
+    ncol=2, 
+    title="Chloride Index", 
+    frameon=False,
+    )
+    for line in legend.get_lines():
+        line.set_linewidth(0)
+        line.set_marker('s')
+        line.set_markersize(10)
+    for text in legend.get_texts():
+        text.set_fontweight("bold")
+        text.set_fontsize(15)
+    legend.get_title().set_fontweight("bold")
 
-### DEFINE PORE TOPOLOGY
-# PORE = data[['POSITION_PORE','ZPOS']]
-# Inner_Vestibule=PORE.loc[PORE.POSITION_PORE=="Inner_Vestibule"]
-# Ca_Binding=PORE.loc[PORE.POSITION_PORE=="Ca_Binding"]
-# Neck=PORE.loc[PORE.POSITION_PORE=="Neck"]
-# Outer_Vestibule=PORE.loc[PORE.POSITION_PORE=="Outer_Vestibule"]
-# Out_of_Zone=PORE.loc[PORE.POSITION_PORE=="Out_of_Zone"]
+    for bar in g.patches:
+
+      # Using Matplotlib's annotate function and
+      # passing the coordinates where the annotation shall be done
+      # x-coordinate: bar.get_x() + bar.get_width() / 2
+      # y-coordinate: bar.get_height()
+      # free space to be left to make graph pleasing: (0, 8)
+      # ha and va stand for the horizontal and vertical alignment
+        g.annotate(format(bar.get_height(), '.1f'), 
+                        (bar.get_x() + bar.get_width() / 2, 
+                        bar.get_height()), ha='center', va='center',
+                        size=15, xytext=(0, 20),weight='bold',rotation=45,
+                        textcoords='offset points')
 
 # # # ### MISCELLANEOUS ###
-# # plt.ylim([-30,30])
-# plt.suptitle("%s"%(ifile[:-4]),va='top')
-# plt.rcParams['ps.useafm'] = True
-# rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-# plt.rcParams['pdf.fonttype'] = 42
-# plt.gcf().set_size_inches(7.5,5.5)
-# # plt.locator_params(axis='y', nbins=6)
-# plt.legend(loc='upper left',bbox_to_anchor=(1.01, 1),borderaxespad=0)
-# plt.tight_layout()
-# plt.savefig("%s.png"%(ifile[:-4]))
-plt.show()
+plt.suptitle("%s"%(ifile[:-4]),va='top',weight='bold')
+plt.rcParams['ps.useafm'] = True
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+plt.rcParams['pdf.fonttype'] = 42
+SCALE=1.5
+plt.gcf().set_size_inches(7.5*SCALE,7.5*SCALE)
+plt.tight_layout()
+plt.savefig("%s_COUNT.png"%(ifile[:-4]))
+# plt.show()

@@ -57,13 +57,14 @@ if RW=='yes':
     data = pd.read_csv(ifile,
     delim_whitespace=True,
     comment='#',
-    header=0,
+    header=None,
+    names=['FRAME','TM10_CHAIN', 'TM10','OTHER','OTHER_PART','DISTANCE']
     )
 
     data['NUMBER OF CONTACTS']=1
-    print(data)
+    # print(data)
     u = data.groupby(['FRAME','TM10_CHAIN','OTHER_PART']).sum().reset_index()
-    print(u)
+    # print(u)
     u['Time (ns)']=u['FRAME']*2/10
     fig,axes = plt.subplots(2,1,sharex=True,sharey=True)
     chain_list=['A','B']
@@ -82,31 +83,36 @@ if RW=='yes':
         alpha=0.95,
         ax=ax
         )
-        g.set_title("TM10 CHAIN %s"%(chain_list[ind]))
+        ax.set_ylim([0,30])
+        weight='bold'
+        fontsize=30
+        g.set_title("TM10 CHAIN %s"%(chain_list[ind]),weight=weight,fontsize=fontsize)
         ax.tick_params(axis='both', labelsize='large',)
-
-    axes[0].get_legend().remove()
-    legend=axes[1].legend(loc="lower center",
-    bbox_to_anchor=(.5, -0.3), 
-    ncol=10, 
-    title=None, 
+        ax.set_xlabel("Time (ns)",weight=weight,fontsize=fontsize)
+        ax.set_ylabel("Number of Contacts", weight=weight,fontsize=fontsize)
+    axes[1].get_legend().remove()
+    legend=axes[0].legend(loc="upper right",
+    # bbox_to_anchor=(.5, -0.4), 
+    ncol=5, 
+    title="Other Chain",
     frameon=False,
     )
+    legend.get_title().set_fontweight('bold')
     for line in legend.get_lines():
         line.set_linewidth(0)
         line.set_marker('s')
         line.set_markersize(15)
     for text in legend.get_texts():
-        text.set_fontweight("bold")
+        text.set_fontweight("medium")
 
 ##### MISCELLANEOUS ###
 plt.suptitle("%s"%(ifile),va='top',weight='bold')
 plt.rcParams['ps.useafm'] = True
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'weight':'bold'})
+# rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'weight':'bold'})
 plt.rcParams['pdf.fonttype'] = 42
 SCALE=1.5
 plt.gcf().set_size_inches(7.5*SCALE,7.5*SCALE)   ## Wide x Height
 plt.tight_layout()
-plt.savefig("%s"%(ifile))
-plt.show()
+plt.savefig("%s.png"%(ifile),dpi=700)
+# plt.show()
 

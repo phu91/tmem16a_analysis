@@ -4,11 +4,10 @@ import pandas as pd
 import seaborn as sns 
 import argparse,os
 from matplotlib import rc
-from statannot import add_stat_annotation
-import scipy.stats
+
 ###############
 # FUNCTIONS
-
+sns.set_context('notebook')
 def histogram_radius(bins,chain,left_limit,right_limit):
     selected_range = np.linspace(left_limit,right_limit,num=bins+1)
     # check_file = os.path.isfile("HISTOGRAM_CHAIN_%s_%s.dat"%(chain,ifile[:-4]))
@@ -40,9 +39,9 @@ parser.add_argument('--input', type=str, default='',
 parser.add_argument('--rw', type=str, default='NO',
                     help='Rewrite data yes/no?. Default is no')
 parser.add_argument('--offset', type=int, default='2',
-                    help='Extension in Z direction of the PORE')
-parser.add_argument('--bins', type=int, default='10',
-                    help='Number of Bins. Default 10')
+                    help='Extension factor in Z direction of the PORE')
+parser.add_argument('--bins', type=int, default='20',
+                    help='Number of Bins. Default 20')
 args = parser.parse_args()
 ifile =  args.input
 RW = args.rw
@@ -71,100 +70,76 @@ delimiter=' ',
 names=['CHAIN','FRAME','ZCOM'])
 
 com_average_df = com_df.groupby('CHAIN').mean()
-# print(com_average_df)
+com_std_df = com_df.groupby('CHAIN').std()
+# print(com_std_df)
 com_a_average = com_average_df.ZCOM[0]
 com_b_average = com_average_df.ZCOM[1]
-# print(com_a_average)
+com_a_std = com_std_df.ZCOM[0]
+com_b_std = com_std_df.ZCOM[1]
 
 nbin=numberOfbins
 
 #### HISTOGRAM
-right_bound_a_small = com_a_average+offset
-left_bound_a_small = com_a_average-offset
-right_bound_b_small = com_b_average+offset
-left_bound_b_small = com_b_average-offset
+left_bound_a_small = com_a_average-com_a_std*offset
+right_bound_a_small = 5
+left_bound_b_small = com_b_average-com_b_std*offset
+right_bound_b_small = 5
 
 chain_a_small = histogram_radius(bins=nbin,chain='A',left_limit=left_bound_a_small,right_limit=right_bound_a_small)
 chain_b_small = histogram_radius(bins=nbin,chain='B',left_limit=left_bound_b_small,right_limit=right_bound_b_small)
 # print(chain_a.ZPOS)
 
-#### HISTOGRAM
-offset2=50
-nbin2=nbin+20
-right_bound_a = com_a_average+offset2
-left_bound_a = com_a_average-offset2
-right_bound_b = com_b_average+offset2
-left_bound_b = com_b_average-offset2
-
-chain_a = histogram_radius(bins=nbin2,chain='A',left_limit=left_bound_a,right_limit=right_bound_a)
-chain_b = histogram_radius(bins=nbin2,chain='B',left_limit=left_bound_b,right_limit=right_bound_b)
-# print(chain_a.ZPOS)
-
 # Initialize the grid
-grid = plt.GridSpec(2, 2, wspace=0.4, hspace=0.3)
+grid = plt.GridSpec(1, 2, wspace=0.3, hspace=0.3)
 # make subplots
-g1 = plt.subplot(grid[0, 0])
-g2 = plt.subplot(grid[1, 0])
-g3 = plt.subplot(grid[:2,1])
+g1 = plt.subplot(grid[0])
+g2 = plt.subplot(grid[1])
 
-# fig,axes = plt.subplots(1,2,sharey=True)
 color_a='violet'
 color_b='deepskyblue'
 alpha=0.25
-g1.axvline(x=com_a_average,linestyle=':',color='black',label='Center of Mass of Pore A')
-g1.axhline(y=1.81,linestyle='-.',color='coral',label='')
-g1.axhline(y=3.2,linestyle='-.',color='blue',label='')
+g1.axvline(x=com_a_average,linestyle='--',lw=3,color='black',label='Center of Mass of Pore A')
+g1.axhline(y=1.81,linestyle='-.',lw=3,color='coral',label='Hydrated Cl-')
+g1.axhline(y=3.2,linestyle='-.',lw=3,color='blue',label='Cl-')
 
-g2.axvline(x=com_b_average,linestyle='--',color='black',label='Center of Mass of Pore B')
-g2.axhline(y=1.81,linestyle='-.',color='coral',label='')
-g2.axhline(y=3.2,linestyle='-.',color='blue',label='')
+g2.axvline(x=com_b_average,linestyle='--',lw=3,color='black',label='Center of Mass of Pore B')
+g2.axhline(y=1.81,linestyle='-.',lw=3,color='coral',label='Hydrated Cl-')
+g2.axhline(y=3.2,linestyle='-.',lw=3,color='blue',label='Cl-')
 
-g3.axhline(y=com_a_average,linestyle=':',color='black',label='')
-g3.axhline(y=com_b_average,linestyle='--',color='black',label='')
-g3.axvline(x=1.81,linestyle='-.',color='coral',label='Chloride radius')
-g3.axvline(x=3.2,linestyle='-.',color='blue',label='Hydrated Chloride radius')
-#################
 
-g1.plot(chain_a_small.ZPOS,chain_a_small.RADII,color=color_a,marker='o',label='',lw=3,markersize=10)
+g1.plot(chain_a_small.ZPOS,chain_a_small.RADII,color=color_a,marker=None,label='',lw=6,markersize=10)
 g1.fill_between(chain_a_small.ZPOS, chain_a_small.RADII-chain_a_small.STD, chain_a_small.RADII+chain_a_small.STD, alpha=alpha, linewidth=0,color=color_a)
-g2.plot(chain_b_small.ZPOS,chain_b_small.RADII,color=color_b,marker='s',label='',lw=3,markersize=10)
+g2.plot(chain_b_small.ZPOS,chain_b_small.RADII,color=color_b,marker=None,label='',lw=6,markersize=10)
 g2.fill_between(chain_b_small.ZPOS, chain_b_small.RADII-chain_b_small.STD, chain_b_small.RADII+chain_b_small.STD, alpha=alpha, linewidth=0,color=color_b)
 
-g3.fill_betweenx(chain_b.ZPOS, chain_b.RADII+chain_b.STD, chain_b.RADII-chain_b.STD, alpha=alpha, linewidth=0,color=color_b)
-g3.fill_betweenx(chain_a.ZPOS, chain_a.RADII+chain_a.STD, chain_a.RADII-chain_a.STD, alpha=alpha, linewidth=0,color=color_a)
-g3.plot(chain_b.RADII,chain_b.ZPOS,color=color_b,marker='s',label='',lw=3,markersize=0)
-g3.plot(chain_a.RADII,chain_a.ZPOS,color=color_a,marker='o',label='',lw=3,markersize=0)
+g1.set_xlim([com_a_average-com_a_std*offset,5])
+g2.set_xlim([com_b_average-com_b_std*offset,5])
 
-g1.set_xlim([com_a_average-offset,com_a_average+offset])
-g2.set_xlim([com_b_average-offset,com_b_average+offset])
+fontsize=20
+g1.set_title("Chain A",weight='bold',fontsize=fontsize)
+g2.set_title("Chain B",weight='bold',fontsize=fontsize)
 
-g1.set_title("Chain A",weight='bold')
-g2.set_title("Chain B",weight='bold')
+g1.set_xlabel("Z Coordinate",fontsize=fontsize,weight='bold')
+g1.set_ylabel("Radius (Å)",fontsize=fontsize,weight='bold')
+g1.set_ylim([0,4])
 
-g1.set_xlabel("Z Coordinate",weight='bold')
-g1.set_ylabel("Radius (Å)",weight='bold')
-g1.set_ylim([1,4])
+g2.set_xlabel("Z Coordinate",fontsize=fontsize,weight='bold')
+g2.set_ylabel("Radius (Å)",fontsize=fontsize,weight='bold')
+# g2.set_xlim([-10,10])
+g2.set_ylim([0,4])
 
-g2.set_xlabel("Z Coordinate",weight='bold')
-g2.set_ylabel("Radius (Å)",weight='bold')
-g2.set_ylim([1,4])
-
-g3.set_ylabel("Z Coordinate",weight='bold')
-g3.set_xlabel("Radius (Å)",weight='bold')
-# g3.set_ylim([0,4])
 
 # # # ### MISCELLANEOUS ###
-g1.legend()
-g2.legend()
-g3.legend()
-plt.suptitle("%s"%(ifile[:-4]),va='top',weight='bold')
+g1.legend(loc='lower right')
+g2.legend(loc='lower right')
+
+plt.suptitle("%s"%(ifile[:-4]),va='top')
 plt.rcParams['ps.useafm'] = True
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 plt.rcParams['pdf.fonttype'] = 42
 SCALE=1
 plt.gcf().set_size_inches(7.5*SCALE,6.5*SCALE)   ## Wide x Height
-# plt.locator_params(axis='both', nbins=5)
-# plt.tight_layout()
-plt.savefig("%s.png"%(ifile[:-4]))
+plt.tight_layout()
+plt.savefig("%s.png"%(ifile[:-4]),dpi=700)
 # plt.show()
 

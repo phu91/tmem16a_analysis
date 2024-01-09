@@ -21,7 +21,7 @@ def where_is_this_residue(RESID):
     helix_07_range = np.arange(692,714)
     helix_08_range = np.arange(718,741)
     helix_09_range = np.arange(753,781)
-    helix_10_range = np.arange(887,928)
+    helix_10_range_cterm = np.arange(887,928)
 
     # print(helix_01_range)
 
@@ -34,7 +34,7 @@ def where_is_this_residue(RESID):
     loop_6_7_range  = np.arange(667,692)
     loop_7_8_range  = np.arange(714,718)
     loop_8_9_range  = np.arange(741,753)
-    loop_9_10_range = np.arange(781,887)
+    loop_9_10_range_tm10_top = np.arange(781,887)
     PART_NAME='UNK'
     if RESID in helix_01_range:
         PART_NAME='TM1'
@@ -54,8 +54,8 @@ def where_is_this_residue(RESID):
         PART_NAME='TM8'
     elif RESID in helix_09_range:
         PART_NAME='TM9'
-    elif RESID in helix_10_range:
-        PART_NAME='TM10'
+    elif RESID in helix_10_range_cterm:
+        PART_NAME='TM10_CTERM'
     elif RESID in loop_1_2_range:
         PART_NAME='L12'
     elif RESID in loop_2_3_range:
@@ -72,8 +72,8 @@ def where_is_this_residue(RESID):
         PART_NAME='L78'
     elif RESID in loop_8_9_range:
         PART_NAME='L89'
-    elif RESID in loop_9_10_range:
-        PART_NAME='L910'
+    elif RESID in loop_9_10_range_tm10_top:
+        PART_NAME='L910_TM10_TOP'
     elif RESID in N_term:
         PART_NAME='Nterm'
     return PART_NAME

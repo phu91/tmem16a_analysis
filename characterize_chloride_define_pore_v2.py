@@ -17,7 +17,6 @@ def find_zone(AtomGroup):
     maxZ = AtomGroup.positions[:,2].max()
     return minZ,maxZ
 
-
 # Instantiate the parser
 parser = argparse.ArgumentParser(description='Optional app description')
 # Required positional argument

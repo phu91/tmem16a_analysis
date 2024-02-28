@@ -56,7 +56,6 @@ def find_chlorides():
     print("\n===> Trajectories of FOUND Cl- are saved in 'Chlorides_at_pore_chain_A_%s.dcd' and 'Chlorides_at_pore_chain_B_%s.dcd'\n"%(systemname,systemname))
     return chloride_list_found
 
-
 # Instantiate the parser
 parser = argparse.ArgumentParser(description='Optional app description')
 # Required positional argument

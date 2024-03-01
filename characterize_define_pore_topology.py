@@ -20,10 +20,12 @@ def define_topology(AtomGroup):
         all_max_z.append(AtomGroup.positions[:,2].max())
     return(np.average(all_min_z),np.average(all_max_z))
 
-def define_new_topology(sel1,sel2,sel3,sel4):
+def smooth_topology(sel1,sel2,sel3,sel4):
     all_z = [*sel1,*sel2,*sel3,*sel4]
+    # print(all_z)
     new_defined_topology = (all_z[0],np.average(all_z[1:3]),np.average(all_z[3:5]),np.average(all_z[5:7]),all_z[7])
-    return(np.round(all_z,1))
+    # print(np.round(new_defined_topology))
+    return(np.round(new_defined_topology,1))
     
 # Instantiate the parser
 parser = argparse.ArgumentParser(description='Optional app description')
@@ -70,8 +72,8 @@ inner_vest_topology_chainB = define_topology(inner_vest_chainB)
 neck_topology_chainB = define_topology(neck_chainB)
 outer_vest_topology_chainB = define_topology(outer_vest_chainB)
 
-chaina = define_new_topology(ca_binding_topology_chainA,inner_vest_topology_chainA,neck_topology_chainA,outer_vest_topology_chainA)
-chainb = define_new_topology(ca_binding_topology_chainB,inner_vest_topology_chainB,neck_topology_chainB,outer_vest_topology_chainB)
+chaina = smooth_topology(ca_binding_topology_chainA,inner_vest_topology_chainA,neck_topology_chainA,outer_vest_topology_chainA)
+chainb = smooth_topology(ca_binding_topology_chainB,inner_vest_topology_chainB,neck_topology_chainB,outer_vest_topology_chainB)
 
 with open("PORE_TOPOLOGY_%s.dat"%(systemname),'w+') as TOPOLOGY:
     # print("Ca_binding","A",ca_binding_topology_chainA)

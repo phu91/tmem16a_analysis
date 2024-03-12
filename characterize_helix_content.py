@@ -112,22 +112,22 @@ else:
 # helix_03a = u.select_atoms("segid PROA and resid 478 to 518",updating=True)
 # helix_04a = u.select_atoms("segid PROA and resid 534 to 562",updating=True)
 # helix_05a = u.select_atoms("segid PROA and resid 572 to 598",updating=True)
-helix_06a = u.select_atoms("segid PROA and resid 630 to 666",updating=True)
+helix_06a = u.select_atoms("segid PROA and resid 637 to 648",updating=True)
 # helix_07a = u.select_atoms("segid PROA and resid 692 to 713",updating=True)
 # helix_08a = u.select_atoms("segid PROA and resid 718 to 740",updating=True)
 # helix_09a = u.select_atoms("segid PROA and resid 753 to 780",updating=True)
-helix_10a = u.select_atoms("segid PROA and resid 887 to 925",updating=True)
+# helix_10a = u.select_atoms("segid PROA and resid 887 to 925",updating=True)
 
 # helix_01b = u.select_atoms("segid PROB and resid 327 to 360",updating=True)
 # helix_02b = u.select_atoms("segid PROB and resid 399 to 439",updating=True)
 # helix_03b = u.select_atoms("segid PROB and resid 478 to 518",updating=True)
 # helix_04b = u.select_atoms("segid PROB and resid 534 to 562",updating=True)
 # helix_05b = u.select_atoms("segid PROB and resid 572 to 598",updating=True)
-helix_06b = u.select_atoms("segid PROB and resid 630 to 666",updating=True)
+helix_06b = u.select_atoms("segid PROB and resid 634 to 648",updating=True)
 # helix_07b = u.select_atoms("segid PROB and resid 692 to 713",updating=True)
 # helix_08b = u.select_atoms("segid PROB and resid 718 to 740",updating=True)
 # helix_09b = u.select_atoms("segid PROB and resid 753 to 780",updating=True)
-helix_10b = u.select_atoms("segid PROB and resid 887 to 925",updating=True)
+# helix_10b = u.select_atoms("segid PROB and resid 887 to 925",updating=True)
 
 
 helixa_list = [
@@ -140,7 +140,8 @@ helix_06a,
 # helix_07a,
 # helix_08a,
 # helix_09a,
-helix_10a]
+# helix_10a
+]
 
 helixb_list = [
 # helix_01b,
@@ -152,7 +153,8 @@ helix_06b,
 # helix_07b,
 # helix_08b,
 # helix_09b,
-helix_10b]
+# helix_10b
+]
 
 # helixa_list_label = ['helix_01a',
 # 'helix_02a',

@@ -91,9 +91,9 @@ with open("cla_track_all_%s.dat"%(systemname),'w+') as of:
                 of.flush()
 if pore_traj is True:
     print("\nPORE TOPOLOGY IS CALCULATING!\n")
-    ca_binding = u.select_atoms("protein and resid 643 648 649 651 652 653 654 700 702 703 704 7025 727 729 and backbone",updating=True)
+    ca_binding = u.select_atoms("protein and resid 643 648 649 651 652 653 654 700 702 703 704 705 727 729 and backbone",updating=True)
     inner_vest = u.select_atoms("protein and resid 544 545 546 547 548 549 585 586 587 588 589 637 638 640 642 644 645 705 706 707 708 709 710 and backbone",updating=True)
-    neck = u.select_atoms("protein and resid 505 506 507 508 540 54 542 543 590 591 592 593 635 636 711 712 and backbone",updating=True)
+    neck = u.select_atoms("protein and resid 505 506 507 508 540 541 542 543 590 591 592 593 635 636 711 712 and backbone",updating=True)
     outer_vest = u.select_atoms("protein and resid 509 510 512 513 514 518 520 530 534 535 539 594 595 616 618 619 630 631 632 633 634 716 and backbone",updating=True)
     with open("define_pore_%s.dat"%(systemname),'w+') as of:
         of.write('''#protein and resid 643 648 649 651 652 653 654 700 702 703 704 7025 727 729

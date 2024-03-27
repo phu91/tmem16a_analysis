@@ -7,7 +7,7 @@ from matplotlib import rc
 # import plotly.express as px
 
 sns.set_context("notebook")
-plt.style.use("dark_background")
+# plt.style.use("dark_background")
 parser = argparse.ArgumentParser(description='Optional app description')
 
 parser.add_argument('--input', type=str, default='',
@@ -37,28 +37,9 @@ resid_a = np.arange(73,928)
 resid_b = np.arange(73,928)
 resid_list = np.concatenate((resid_a,resid_b))
 df = pd.DataFrame(matrix,columns=resid_list,index=resid_list)
+df = df.fillna(0)
+df = df.replace(2000,0)
+print(df)
 
-# df_short = df.loc[224]
-# df_short = df.loc[[73,100],:]
-df_short = df
-fig,ax = plt.subplots(1,1)
-g = sns.heatmap(data=df_short,
-                vmin=0.5,   ## Cufoff at 0.6
-                vmax=1,
-                robust=True,
-                cmap='RdPu_r')
-g.set_xlabel("RESID")
-g.set_ylabel("RESID")
-
-### MISCELLANEOUS ###
-plt.locator_params(axis='y', nbins=30)
-plt.locator_params(axis='x', nbins=30)
-plt.suptitle("%s"%(ifile[:-4]),va='top')
-plt.rcParams['ps.useafm'] = True
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-plt.rcParams['pdf.fonttype'] = 42
-plt.gcf().set_size_inches(7.5,6)   ## Wide x Height
-# plt.locator_params(axis='both', nbins=5)
-# plt.tight_layout()
-plt.savefig("CORR_%s"%(ifile[:-3]))
+sns.heatmap(df)
 plt.show()

@@ -79,7 +79,7 @@ selected_extraction=args.sel
 
 u = mda.Universe(top_file,traj_file)   #,in_memory=True)
 n_atom_origin = len(u.atoms)
-print(u)
+# print(u)
 ### SPLICING TRAJECTORY
 if traj_end != -1:
     extract_frames(traj_begin,traj_end,selected_extraction)

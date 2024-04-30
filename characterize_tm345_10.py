@@ -61,9 +61,14 @@ u = mda.Universe(top_file,traj_file)
 
 R451_A = u.select_atoms("segid PROA and resid 451 and name CZ",updating=True)
 K567_A = u.select_atoms("segid PROA and resid 567 and name NZ",updating=True)
+K584_A = u.select_atoms("segid PROA and resid 584 and name NZ",updating=True)
+K641_A = u.select_atoms("segid PROA and resid 641 and name NZ",updating=True)
 K887_A = u.select_atoms("segid PROA and resid 887 and name NZ",updating=True)
+
 R451_B = u.select_atoms("segid PROB and resid 451 and name CZ",updating=True)
 K567_B = u.select_atoms("segid PROB and resid 567 and name NZ",updating=True)
+K584_B = u.select_atoms("segid PROB and resid 584 and name NZ",updating=True)
+K641_B = u.select_atoms("segid PROB and resid 641 and name NZ",updating=True)
 K887_B = u.select_atoms("segid PROB and resid 887 and name NZ",updating=True)
 
 df = pd.DataFrame()
@@ -73,13 +78,15 @@ for ts in tqdm(u.trajectory[::traj_skip]):
     dist_567_A_887_B = distance_by_chain(ts.frame,K567_A,K887_B,"A")
     dist_451_B_887_A = distance_by_chain(ts.frame,R451_B,K887_A,"B")
     dist_567_B_887_A = distance_by_chain(ts.frame,K567_B,K887_A,"B")
+    dist_564_641_A = distance_by_chain(ts.frame,K584_A,K641_A)
+    dist_564_641_B = distance_by_chain(ts.frame,K584_B,K641_B)
 
-    df = pd.concat([df,dist_451_A_887_B,dist_567_A_887_B,dist_451_B_887_A,dist_567_B_887_A])
-    del dist_451_A_887_B,dist_567_A_887_B,dist_451_B_887_A,dist_567_B_887_A
+    df = pd.concat([df,dist_451_A_887_B,dist_567_A_887_B,dist_451_B_887_A,dist_567_B_887_A,dist_564_641_A,dist_564_641_B])
+    del dist_451_A_887_B,dist_567_A_887_B,dist_451_B_887_A,dist_567_B_887_A,dist_564_641_A,dist_564_641_B
 
 # print(df)
 with open("TM345_10_PROFILE_%s.dat"%(systemname),'w+') as ofile:
-    ofile.write("# DISTANCE BETWEEN R451(A_LOOP23),K567(A_LOOP45) to K887(B_THIRD_CA)\n")
+    ofile.write("# DISTANCE BETWEEN R451(A_LOOP23),K567(A_LOOP45) to K887(B_THIRD_CA), K584 to K641\n")
 
 df.to_csv("TM345_10_PROFILE_%s.dat"%(systemname),sep='\t',index=False,mode='a')
 print("\n==> DATA saved to TM345_10_PROFILE_%s.dat" %(systemname))

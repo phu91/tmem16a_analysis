@@ -42,8 +42,8 @@ parser.add_argument('--begin', type=int, default=1,
 parser.add_argument('--end', type=int, default=-1,
                     help='Ending Frame. Default = -1 ALL FRAME')
 
-parser.add_argument('--cutoff', type=float, default=3,
-                    help='Cutoff. Default = 3 A')
+parser.add_argument('--cutoff', type=float, default=4,
+                    help='Cutoff. Default = 4 A')
 
 parser.add_argument('--skip', type=int, default=1,
                     help='Skipping rate for Radial Distribution Function calculations. Default = 1 frames')
@@ -100,25 +100,28 @@ with open("PIP2_TM345_10_PROFILE_%s.dat"%(systemname),'w+') as ofile:
     for ind,row in df_pip2.iterrows():
         ofile.write("#\t%s\t%s\n"%(row.resid,row.position))
     ofile.write("# FRAME RESID POSITION BINDING\n")
-    for ts in tqdm(u.trajectory[::traj_skip],desc='Tracking PIP2'):
-        for res in df_pip2.resid:
-            pip2_A = u.select_atoms("(around 10 ((segid PROA and resid 567 and name NZ) or (segid PROB and resid 887 and name NZ))) and (resname PLPI24 and name P4 and resid %s)"%(res),updating=True)
-            pip2_B = u.select_atoms("(around 10 ((segid PROB and resid 567 and name NZ) or (segid PROA and resid 887 and name NZ))) and (resname PLPI24 and name P4 and resid %s)"%(res),updating=True)
-            # print(pip2_A.resids)
-            # print(pip2_B.resids)
-            if len(pip2_A.resids)!=0:
-                # print(ts.frame,res,"567A_887B","1")
-                ofile.write("%s\t%s\t%s\t%s\n"%(ts.frame,res,"567A_887B","1"))
-            else:
-                # print(ts.frame,res,"567A_887B","0")
-                ofile.write("%s\t%s\t%s\t%s\n"%(ts.frame,res,"567A_887B","0"))
-            if len(pip2_B.resids)!=0:
-                # print(ts.frame,res,"567B_887A","1")
-                ofile.write("%s\t%s\t%s\t%s\n"%(ts.frame,res,"567B_887A","1"))
+    if len(df_pip2)!=0:
+        for ts in tqdm(u.trajectory[::traj_skip],desc='Tracking PIP2'):
+            for res in df_pip2.resid:
+                pip2_A = u.select_atoms("(around 10 ((segid PROA and resid 567 and name NZ) or (segid PROB and resid 887 and name NZ))) and (resname PLPI24 and name P4 and resid %s)"%(res),updating=True)
+                pip2_B = u.select_atoms("(around 10 ((segid PROB and resid 567 and name NZ) or (segid PROA and resid 887 and name NZ))) and (resname PLPI24 and name P4 and resid %s)"%(res),updating=True)
+                # print(pip2_A.resids)
+                # print(pip2_B.resids)
+                if len(pip2_A.resids)!=0:
+                    # print(ts.frame,res,"567A_887B","1")
+                    ofile.write("%s\t%s\t%s\t%s\n"%(ts.frame,res,"567A_887B","1"))
+                else:
+                    # print(ts.frame,res,"567A_887B","0")
+                    ofile.write("%s\t%s\t%s\t%s\n"%(ts.frame,res,"567A_887B","0"))
+                if len(pip2_B.resids)!=0:
+                    # print(ts.frame,res,"567B_887A","1")
+                    ofile.write("%s\t%s\t%s\t%s\n"%(ts.frame,res,"567B_887A","1"))
 
-            else:
-                # print(ts.frame,res,"567B_887A","0")
-                ofile.write("%s\t%s\t%s\t%s\n"%(ts.frame,res,"567B_887A","0"))
+                else:
+                    # print(ts.frame,res,"567B_887A","0")
+                    ofile.write("%s\t%s\t%s\t%s\n"%(ts.frame,res,"567B_887A","0"))
+    else:
+        print("No PIP2 found.\n")
 
 # with open("PIP2_TM345_10_PROFILE_%s.dat"%(systemname),'w+') as ofile:
 #     ofile.write("# PIP2 FOUND BETWEEN K567(LOOP45) to K887(THIRD_CA). CUTOFF: 4 A\n")

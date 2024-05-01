@@ -76,7 +76,7 @@ important_pip2_B = u.select_atoms("(around %s ((segid PROB and resid 567 and nam
 df = pd.DataFrame()
 
 pip2_list_found =[]
-for ts in tqdm(u.trajectory[::traj_skip*5],desc='Finding PIP2'):
+for ts in tqdm(u.trajectory[::traj_skip*10],desc='Finding PIP2'):
         if len(important_pip2_A)!=0:
             for pip2 in important_pip2_A.resids:
                 pip2_list_found.append((pip2,"567A_887B"))
@@ -85,7 +85,7 @@ for ts in tqdm(u.trajectory[::traj_skip*5],desc='Finding PIP2'):
                 pip2_list_found.append((pip2,"567B_887A"))
 # print(pip2_list_found)
 
-df_pip2 = pd.DataFrame(pip2_list_found,columns=['resid','position']).drop_duplicates()
+df_pip2 = pd.DataFrame(pip2_list_found,columns=['resid','position']).drop_duplicates().reset_index()
 if len(df_pip2)!=0:
     print()
     print(df_pip2)
@@ -121,38 +121,38 @@ with open("PIP2_TM345_10_PROFILE_%s.dat"%(systemname),'w+') as ofile:
 data2 = pd.read_csv("PIP2_TM345_10_PROFILE_%s.dat"%(systemname),
 names=['frame','resid','position','binding'],sep='\t')
 
+# print(data2)
 residue_count=len(df_pip2)
 residue_id=df_pip2.resid
 residue_position=df_pip2.position
-# print(data2)
-## FILTERED DATA
+# print(residue_id[0])
+# print(residue_position)
+
+### FILTERED DATA
 filtered_df = pd.DataFrame()
 for i in range(residue_count):
     filtered = data2.query("resid==%s and position=='%s'"%(residue_id[i],residue_position[i]))
+    # print(filtered)
     filtered.loc[filtered['position']=='567B_887A','position']="TM10_A"
     filtered.loc[filtered['position']=='567A_887B','position']="TM10_B"
     filtered_df = pd.concat([filtered,filtered_df],ignore_index=True)
 # print(filtered_df)
 filtered_df = filtered_df.sort_values(by=['frame','position'])
-print(filtered_df)
-filtered_df.to_csv("PIP2_TM345_10_PROFILE_%s.dat"%(systemname),index=False,sep='\t',header=False)
+# print(filtered_df)
+u=filtered_df.groupby(['frame','position']).sum().reset_index()
+u = u[['frame','position','binding']]
+# print(u)
+u.loc[u['binding']>=1,'binding']=1  ## If any PIP2 is at this position, BINDING=1 as sum(binding)>1
+u.to_csv("PIP2_TM345_10_PROFILE_%s_SIMPLE.dat"%(systemname),index=False,sep='\t',header=False)
 
-with open("PIP2_TM345_10_PROFILE_%s.dat"%(systemname),'r+') as ofile:
+with open("PIP2_TM345_10_PROFILE_%s_SIMPLE.dat"%(systemname),'r+') as ofile:
     lines = ofile.readlines()     # lines is list of line, each element '...\n'
     # lines.insert(0, one_line)  # you can use any index if you know the line index
     ofile.seek(0)                 # file pointer locates at the beginning to write the whole file again
     ofile.write("## PIP2 FOUND BETWEEN K567(LOOP45) to K887(THIRD_CA). CUTOFF: %s A\n"%(cutoff))
     ofile.write("## FOUND PIP2 LIST:\n")
     ofile.write("## resid position\n")
-    for ind,row in df_pip2.iterrows():
-        ofile.write("#\t%s\t%s\n"%(row.resid,row.position))
+    # for ind,row in df_pip2.iterrows():
+        # ofile.write("#\t%s\t%s\n"%(row.resid,row.position))
     ofile.write("# FRAME RESID POSITION BINDING\n")
     ofile.writelines(lines)       # write whole lists again to the same file
-
-# with open("PIP2_TM345_10_PROFILE_%s.dat"%(systemname),'w+') as ofile:
-    # ofile.write("## PIP2 FOUND BETWEEN K567(LOOP45) to K887(THIRD_CA). CUTOFF: %s A\n"%(cutoff))
-    # ofile.write("## FOUND PIP2 LIST. Use this list to filter out the unrelevant rows.\n")
-    # ofile.write("# resid position\n")
-    # for ind,row in df_pip2.iterrows():
-    #     ofile.write("#\t%s\t%s\n"%(row.resid,row.position))
-    # ofile.write("# FRAME RESID POSITION BINDING\n")

@@ -5,7 +5,7 @@ import seaborn as sns
 import argparse 
 from matplotlib import rc
 import networkx as nx
-import biographs as bg
+# import biographs as bg
 import os, re
 import plotly.graph_objects as go
 from graphein.protein.config import ProteinGraphConfig
@@ -70,7 +70,7 @@ df_corr = pd.DataFrame(matrix,columns=resid_list,index=resid_list)
 # Defined default configuration for graph
 config = ProteinGraphConfig(granularity='CA')
 # Add new edge function 
-new_edge_funcs = {"edge_construction_functions": [add_GC_edges]}
+new_edge_funcs = {"edge_construction_functions": [add_GC_edges,add_aromatic_interactions]}
 config = ProteinGraphConfig(**new_edge_funcs)
 
 ## Construct the protein (residue) graph

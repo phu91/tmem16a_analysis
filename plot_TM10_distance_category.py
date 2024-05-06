@@ -75,6 +75,7 @@ if len(u.query("OTHER_PART=='TM10'")) ==0:
     u=pd.concat([u,pd.DataFrame(add_tm10_dummy)])
 
 u = u.sort_values('OTHER_PART')
+# g=sns.violinplot(data=u.query("OTHER_PART=='L23' or OTHER_PART=='L45' or OTHER_PART=='Nterm' or OTHER_PART=='TM10' or OTHER_PART=='TM3'"),   
 g=sns.violinplot(data=u.query("OTHER_PART=='L23' or OTHER_PART=='Nterm' or OTHER_PART=='TM10'"),   
 x='OTHER_PART',
 y='NUMBER OF CONTACTS',

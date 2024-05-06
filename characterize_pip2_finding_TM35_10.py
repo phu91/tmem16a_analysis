@@ -70,8 +70,12 @@ K887_B = u.select_atoms("segid PROB and resid 887 and name NZ",updating=True)
 
 # important_pip2_A = u.select_atoms("(around 5 ((segid PROA and resid 567 and name NZ) and (segid PROB and resid 887 and name NZ)) and (resname PLPI24)",updating=True)
 # important_pip2_B = u.select_atoms("(around 5 ((segid PROB and resid 567 and name NZ) and (segid PROA and resid 887 and name NZ)) and (resname PLPI24)",updating=True)
+
 important_pip2_A = u.select_atoms("(around %s ((segid PROA and resid 567 and name NZ) or (segid PROB and resid 887 and name NZ))) and (resname PLPI24 and name P4)"%(cutoff),updating=True)
 important_pip2_B = u.select_atoms("(around %s ((segid PROB and resid 567 and name NZ) or (segid PROA and resid 887 and name NZ))) and (resname PLPI24 and name P4)"%(cutoff),updating=True)
+
+# important_pip2_A = u.select_atoms("(around %s ((segid PROA and resid 567 and name NZ) or (segid PROB and resid 887 and name NZ)))"%(cutoff),updating=True)
+# print(important_pip2_A)
 
 df = pd.DataFrame()
 
@@ -97,11 +101,13 @@ with open("PIP2_TM345_10_PROFILE_%s.dat"%(systemname),'w+') as ofile:
     if len(df_pip2)!=0:
         for ts in tqdm(u.trajectory[::traj_skip],desc='Tracking PIP2'):
             for res in df_pip2.resid:
-                pip2_A = u.select_atoms("(around 10 ((segid PROA and resid 567 and name NZ) or (segid PROB and resid 887 and name NZ))) and (resname PLPI24 and name P4 and resid %s)"%(res),updating=True)
-                pip2_B = u.select_atoms("(around 10 ((segid PROB and resid 567 and name NZ) or (segid PROA and resid 887 and name NZ))) and (resname PLPI24 and name P4 and resid %s)"%(res),updating=True)
+                pip2_A = u.select_atoms("(around %s ((segid PROA and resid 567 and name NZ) or (segid PROB and resid 887 and name NZ))) and (resname PLPI24 and name P4 and resid %s)"%(cutoff,res),updating=True)
+                pip2_B = u.select_atoms("(around %s ((segid PROB and resid 567 and name NZ) or (segid PROA and resid 887 and name NZ))) and (resname PLPI24 and name P4 and resid %s)"%(cutoff,res),updating=True)
                 # print(pip2_A.resids)
                 # print(pip2_B.resids)
                 if len(pip2_A.resids)!=0:
+                    if pip2_A.atoms=='NZ':
+                        print(pip2_A.atoms)
                     # print(ts.frame,res,"567A_887B","1")
                     ofile.write("%s\t%s\t%s\t%s\n"%(ts.frame,res,"567A_887B","1"))
                 else:

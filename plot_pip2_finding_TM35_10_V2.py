@@ -29,4 +29,4 @@ data['time']=data['frame']*0.2
 chainA_pip2 = data.loc[data['chainA_887']==1]
 chainB_pip2 = data.loc[data['chainB_887']==1]
 
-print(len(chainA_pip2)/50000,len(chainB_pip2)/5000)
+print(len(chainA_pip2)/50000,len(chainB_pip2)/50000)

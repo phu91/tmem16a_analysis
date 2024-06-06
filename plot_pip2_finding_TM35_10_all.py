@@ -41,34 +41,39 @@ data_plot = pd.read_csv(ifile,comment='#',
 delim_whitespace=True,names=['frame','position','binding']
 )
 # print(data_plot)
-data_plot_pivot = data_plot.pivot_table(index='frame',columns='position',values='binding')
+data_plot['time']=data_plot['frame']*0.2
+
+data_plot_pivot = data_plot.pivot_table(index='time',columns='position',values='binding')
 data_plot_pivot = data_plot_pivot.reset_index()
 # print(data_plot_pivot)
-data_plot_pivot = data_plot_pivot[['frame','TM10_A','TM10_B']]
+data_plot_pivot = data_plot_pivot[['time','TM10_A','TM10_B']]
 # print(data_plot_pivot)
 data_plot_pivot.to_csv("%s_PLOT.dat"%(ifile[:-4]),sep='\t',index=False)
-# print(data_plot_pivot.columns)
 
-# fig,axes = plt.subplots(1,2,sharex=True,sharey=True)
-# marker_colors = cc.glasbey[:2]
-# # print(marker_colors)
+fig, axes = plt.subplots(2,1)
 
-# g = sns.violinplot(data=data_plot_pivot,
-# x='position',
-# y='binding',)
+g1 = sns.violinplot(data=data_plot,
+x='position',
+y='binding',
+ax=axes[0])
+g1.set_ylabel("Binding Mode")
+g1.set_xlabel("Binding Position")
+g1.set_yticks(np.arange(0, 1.5, 1))
+g1.set_yticklabels(['No','Yes'])
 
-# # g.set_ylim([-0.1,1.1])
-# g.set_ylabel("Binding Mode")
-# g.set_xlabel("Binding Position")
-# g.set_yticks(np.arange(0, 1.1, 1))
-# g.set_yticklabels(['No','Yes'])
+g2 = axes[1].plot(data_plot_pivot.time,data_plot_pivot.TM10_A,data_plot_pivot.time,data_plot_pivot.TM10_B,)
+axes[1].set_xlabel("Time(ns)")
+axes[1].set_ylabel("Binding Mode")
+axes[1].set_yticks(np.arange(0, 1.5, 1))
+axes[1].set_yticklabels(['No','Yes'])
 
-# plt.suptitle("%s"%(ifile))
-# # plt.rcParams['ps.useafm'] = True
-# # rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-# # plt.rcParams['pdf.fonttype'] = 42
-# # plt.gcf().set_size_inches(7.5,5.5)
-# # plt.legend(loc='upper right') #,bbox_to_anchor=(1.01, 1),borderaxespad=0)
-# plt.tight_layout()
-# # plt.savefig("%s.png"%(ifile[:-4]),dpi=700)
+
+plt.suptitle("%s"%(ifile))
+plt.rcParams['ps.useafm'] = True
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+plt.rcParams['pdf.fonttype'] = 42
+plt.gcf().set_size_inches(7.5,5.5)
+plt.legend(loc='upper right') #,bbox_to_anchor=(1.01, 1),borderaxespad=0)
+plt.tight_layout()
+# plt.savefig("%s.png"%(ifile[:-4]),dpi=700)
 plt.show()

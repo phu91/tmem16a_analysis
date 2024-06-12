@@ -63,7 +63,7 @@ n_frame = len(u.trajectory[::traj_skip])
 P_DIMENSION_X_LIST = []
 P_DIMENSION_Y_LIST = []
 
-for ts in u.trajectory[::traj_skip*1]:  ## TESTING CASE. IN PRODUCTION RUN, traj_skip needs to be timed a higher factor
+for ts in u.trajectory[::traj_skip*50]:  ## TESTING CASE. IN PRODUCTION RUN, traj_skip needs to be timed a higher factor
     P_head = u.select_atoms("type PL",updating=True)
     P_DIMENSION = P_head.positions
     for i in range(n_lipid):

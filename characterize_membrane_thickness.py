@@ -57,7 +57,8 @@ u = mda.Universe(top_file,traj_file)
 
 P_head = u.select_atoms("type PL",updating=True)
 n_lipid = 660
-n_frame = int(len(u.trajectory)/traj_skip)
+n_frame = len(u.trajectory[::traj_skip])
+# print(n_frame)
 
 P_DIMENSION_X_LIST = []
 P_DIMENSION_Y_LIST = []

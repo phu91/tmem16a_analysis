@@ -13,21 +13,22 @@ parser = argparse.ArgumentParser(description='Optional app description')
 parser.add_argument('--input', type=str, default='',
                     help='INPUT to Rg profile')
 
-parser.add_argument('--cutoff', type=int, default='50',
-                    help='Cutoff distance from the pore region to search for Cl-. Default 50 (A)')
 args = parser.parse_args()
 
 ifile =  args.input
-cutoff = args.cutoff
 
 data = pd.read_csv(ifile,comment='#',
 delim_whitespace=True,
 names=['FRAME','INDEX','CHAIN','ZPOS','POSITION_PORE','DCOM_PORE'])
 data['COUNT']=1
-data_count_a = data[['FRAME','CHAIN','POSITION_PORE','COUNT']].query("POSITION_PORE =='Inner_Vestibule' or POSITION_PORE =='Ca_Binding'")
-# print(data_count_a)
+data_count_a = data[['FRAME','INDEX','CHAIN','POSITION_PORE','COUNT']].query("POSITION_PORE =='Inner_Vestibule' or POSITION_PORE =='Ca_Binding'")
+print(data_count_a)
+data_count_b = data_count_a.groupby(['FRAME']).sum()
+print(data_count_b)
+
+
 n_frame = len(data['FRAME'].unique())
-OCCUPANCY=round(len(data_count_a)/n_frame*100,2)
+OCCUPANCY=round(len(data_count_b)/n_frame*100,2)
 # print(OCCUPANCY)
 print("\nFile: %s"%(ifile))
 print("Number of FRAME: %s"%(n_frame))
